@@ -136,7 +136,7 @@
 
     .modal {
         background:white;
-        width:800px;
+        width:460px;
         max-height:90vh;
         overflow:auto;
         border-radius:8px;
@@ -159,6 +159,7 @@
     th { background:#e3e3e3; }
 
     input[type="text"], input[type="number"], input[type="time"], textarea {
+        width:100%;
         padding:4px;
         margin:3px;
         font-size:12px;
@@ -169,7 +170,7 @@
         resize:vertical;
     }
 
-    .form-row { margin-bottom:5px; }
+    .form-row { margin-bottom:8px; display:flex; flex-direction:column; gap:6px; }
 
     button { padding:6px 10px; margin:3px; cursor:pointer; font-size:12px; }
 
@@ -222,12 +223,12 @@
             <input type="time" id="debut" placeholder="Début">
             <input type="time" id="fin" placeholder="Fin">
             <input type="text" id="client" placeholder="Client">
-            <input type="text" id="donneur" placeholder="Donneur d'ordre">
             <input type="text" id="adresse" placeholder="Adresse">
         </div>
 
         <div class="form-row">
             <input type="text" id="numero" placeholder="Numéro intervention">
+            <input type="text" id="donneur" placeholder="Donneur d'ordre">
             <textarea id="descriptif" placeholder="Descriptif" rows="3"></textarea>
             <input type="number" id="montant" placeholder="Montant (€)" step="0.01">
             <button onclick="ajouterIntervention()">Ajouter</button>
