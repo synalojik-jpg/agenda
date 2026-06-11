@@ -208,6 +208,7 @@
         <button onclick="changeMonth(-1)">&lt;</button>
         <div class="month-label" id="monthLabel"></div>
         <button onclick="changeMonth(1)">&gt;</button>
+        <button onclick="exportCSVMois()" style="background:#007bff; color:white; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;">⬇ Exporter le mois CSV</button>
     </div>
     <div class="calendar-grid" id="calendarGrid"></div>
 </div>
@@ -541,6 +542,31 @@ function ajouterIntervention() {
 
     updateJournal();
     renderCalendar();
+}
+
+function exportCSVMois() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const moisStr = (month + 1).toString().padStart(2, '0');
+    const prefix = year + '-' + moisStr;
+
+    const liste = interventions.filter(i => i.date && i.date.startsWith(prefix));
+
+    if (liste.length === 0) {
+        alert('Aucune intervention ce mois-ci.');
+        return;
+    }
+
+    let csv = "Date;Début;Fin;Client;Adresse;Numéro intervention;Donneur d'ordre;Descriptif;Montant\n";
+    liste.forEach(i => {
+        csv += `${i.date};${i.debut||""};${i.fin||""};${i.client||""};${i.adresse||""};${i.numero||""};${i.donneur||""};${i.descriptif||""};${i.montant||}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "interventions_" + prefix + ".csv";
+    link.click();
 }
 
 function exportCSV() {
