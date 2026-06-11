@@ -144,7 +144,7 @@
 
     .modal {
         background:white;
-        width:460px;
+        width:720px;
         max-height:90vh;
         overflow:auto;
         border-radius:8px;
@@ -232,6 +232,7 @@
         <button onclick="exportCSV()" style="margin-bottom:10px; background:#007bff; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; font-size:13px;">⬇ Exporter tout en CSV</button>
 
         <div class="form-row">
+            <input type="date" id="date-intervention">
             <input type="time" id="debut" placeholder="Début">
             <input type="time" id="fin" placeholder="Fin">
             <input type="text" id="client" placeholder="Client">
@@ -538,7 +539,8 @@ function updateJournal() {
 }
 
 function ajouterIntervention() {
-    const iso = formatDateISO(selectedDate);
+    const dateChamp = document.getElementById('date-intervention').value;
+    const iso = dateChamp || formatDateISO(selectedDate);
     const i = {
         date: iso,
         debut: document.getElementById('debut').value,
@@ -554,7 +556,7 @@ function ajouterIntervention() {
     interventions.push(i);
     sauvegarderJournalDansDrive();
 
-    ["debut","fin","client","donneur","adresse","numero","descriptif","montant"]
+    ["date-intervention","debut","fin","client","donneur","adresse","numero","descriptif","montant"]
         .forEach(id => document.getElementById(id).value = "");
 
     updateJournal();
@@ -571,6 +573,7 @@ function supprimerIntervention(idx) {
 
 function modifierIntervention(idx) {
     const i = interventions[idx];
+    document.getElementById('date-intervention').value = i.date || '';
     document.getElementById('debut').value = i.debut || '';
     document.getElementById('fin').value = i.fin || '';
     document.getElementById('client').value = i.client || '';
