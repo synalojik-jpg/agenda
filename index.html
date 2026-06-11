@@ -181,6 +181,8 @@
     .form-row { margin-bottom:8px; display:flex; flex-direction:column; gap:6px; }
 
     button { padding:6px 10px; margin:3px; cursor:pointer; font-size:12px; }
+    .btn-modifier { background:#ffc107; border:none; border-radius:4px; padding:4px 8px; cursor:pointer; font-size:11px; }
+    .btn-supprimer { background:#dc3545; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer; font-size:11px; }
 
     @media (max-width: 600px) {
         .modal {
@@ -255,6 +257,7 @@
                     <th>Numéro intervention</th>
                     <th>Descriptif</th>
                     <th>Montant</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="journalBody"></tbody>
@@ -513,7 +516,8 @@ function updateJournal() {
 
     const list = interventions.filter(i => i.date === iso);
 
-    list.forEach(i => {
+    list.forEach((i, idx) => {
+        const realIdx = interventions.findIndex(x => x === i);
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${i.debut || ""}</td>
@@ -524,6 +528,10 @@ function updateJournal() {
             <td>${i.numero || ""}</td>
             <td>${i.descriptif || ""}</td>
             <td>${i.montant || ""}€</td>
+            <td>
+                <button class="btn-modifier" onclick="modifierIntervention(${realIdx})">✏️ Modifier</button>
+                <button class="btn-supprimer" onclick="supprimerIntervention(${realIdx})">🗑 Supprimer</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -542,14 +550,42 @@ function ajouterIntervention() {
         descriptif: document.getElementById('descriptif').value,
         montant: document.getElementById('montant').value
     };
+    i.id = Date.now().toString();
     interventions.push(i);
-    sauvegarderJournalDansDrive(); // ← remplace saveData()
+    sauvegarderJournalDansDrive();
 
     ["debut","fin","client","donneur","adresse","numero","descriptif","montant"]
         .forEach(id => document.getElementById(id).value = "");
 
     updateJournal();
     renderCalendar();
+}
+
+function supprimerIntervention(idx) {
+    if (!confirm('Supprimer cette intervention ?')) return;
+    interventions.splice(idx, 1);
+    sauvegarderJournalDansDrive();
+    updateJournal();
+    renderCalendar();
+}
+
+function modifierIntervention(idx) {
+    const i = interventions[idx];
+    document.getElementById('debut').value = i.debut || '';
+    document.getElementById('fin').value = i.fin || '';
+    document.getElementById('client').value = i.client || '';
+    document.getElementById('adresse').value = i.adresse || '';
+    document.getElementById('numero').value = i.numero || '';
+    document.getElementById('donneur').value = i.donneur || '';
+    document.getElementById('descriptif').value = i.descriptif || '';
+    document.getElementById('montant').value = i.montant || '';
+
+    // Supprimer l'ancienne et laisser l'utilisateur re-sauvegarder
+    interventions.splice(idx, 1);
+    sauvegarderJournalDansDrive();
+    updateJournal();
+    renderCalendar();
+    document.getElementById('debut').focus();
 }
 
 function exportCSVMois() {
