@@ -56,6 +56,14 @@
         padding:5px 10px;
         cursor:pointer;
     }
+    #btn-export-mois {
+        background:#007bff;
+        color:white;
+        border:1px solid #007bff;
+        border-radius:4px;
+        font-size:12px;
+        font-weight:bold;
+    }
 
     .month-label {
         font-size:20px;
@@ -208,7 +216,7 @@
         <button onclick="changeMonth(-1)">&lt;</button>
         <div class="month-label" id="monthLabel"></div>
         <button onclick="changeMonth(1)">&gt;</button>
-        <button onclick="exportCSVMois()" style="background:#007bff; color:white; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;">⬇ Exporter le mois CSV</button>
+        <button id="btn-export-mois" onclick="exportCSVMois()">⬇ Exporter le mois CSV</button>
     </div>
     <div class="calendar-grid" id="calendarGrid"></div>
 </div>
