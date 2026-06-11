@@ -218,6 +218,7 @@
         <div class="close-btn" onclick="closeModal()">×</div>
 
         <h2 id="journalTitle">Journal du jour</h2>
+        <button onclick="exportCSV()" style="margin-bottom:10px; background:#007bff; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; font-size:13px;">⬇ Exporter tout en CSV</button>
 
         <div class="form-row">
             <input type="time" id="debut" placeholder="Début">
@@ -232,7 +233,6 @@
             <textarea id="descriptif" placeholder="Descriptif" rows="3"></textarea>
             <input type="number" id="montant" placeholder="Montant (€)" step="0.01">
             <button onclick="ajouterIntervention()">Ajouter</button>
-            <button onclick="exportCSV()">Exporter tout en CSV</button>
         </div>
 
         <table>
