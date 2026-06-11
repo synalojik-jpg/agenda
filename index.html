@@ -144,8 +144,8 @@
 
     .modal {
         background:white;
-        width:720px;
-        max-height:90vh;
+        width:90vw; max-width:750px;
+        max-height:95vh;
         overflow:auto;
         border-radius:8px;
         padding:20px;
@@ -166,11 +166,14 @@
     th, td { border:1px solid #ccc; padding:6px; text-align:left; }
     th { background:#e3e3e3; }
 
-    input[type="text"], input[type="number"], input[type="time"], textarea {
+    input[type="text"], input[type="number"], input[type="time"], input[type="date"], textarea {
         width:100%;
-        padding:4px;
-        margin:3px;
-        font-size:12px;
+        padding:10px;
+        margin:2px 0;
+        font-size:14px;
+        border:1px solid #ccc;
+        border-radius:4px;
+        box-sizing:border-box;
     }
 
     textarea {
@@ -244,7 +247,11 @@
             <input type="text" id="donneur" placeholder="Donneur d'ordre">
             <textarea id="descriptif" placeholder="Descriptif" rows="3"></textarea>
             <input type="number" id="montant" placeholder="Montant (€)" step="0.01">
-            <button onclick="ajouterIntervention()">Ajouter</button>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button onclick="ajouterIntervention()" style="flex:1; padding:12px; font-size:14px; font-weight:bold; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">✔ Ajouter</button>
+                <button onclick="modifierSelectionne()" style="flex:1; padding:12px; font-size:14px; font-weight:bold; background:#ffc107; color:#000; border:none; border-radius:4px; cursor:pointer;">✏️ Modifier</button>
+                <button onclick="supprimerSelectionne()" style="flex:1; padding:12px; font-size:14px; font-weight:bold; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">🗑 Supprimer</button>
+            </div>
         </div>
 
         <table>
@@ -258,7 +265,6 @@
                     <th>Numéro intervention</th>
                     <th>Descriptif</th>
                     <th>Montant</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="journalBody"></tbody>
@@ -517,9 +523,11 @@ function updateJournal() {
 
     const list = interventions.filter(i => i.date === iso);
 
+    window._selectedIdx = null;
     list.forEach((i, idx) => {
         const realIdx = interventions.findIndex(x => x === i);
         const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
         tr.innerHTML = `
             <td>${i.debut || ""}</td>
             <td>${i.fin || ""}</td>
@@ -529,11 +537,23 @@ function updateJournal() {
             <td>${i.numero || ""}</td>
             <td>${i.descriptif || ""}</td>
             <td>${i.montant || ""}€</td>
-            <td>
-                <button class="btn-modifier" onclick="modifierIntervention(${realIdx})">✏️ Modifier</button>
-                <button class="btn-supprimer" onclick="supprimerIntervention(${realIdx})">🗑 Supprimer</button>
-            </td>
         `;
+        tr.onclick = () => {
+            // Désélectionner les autres
+            document.querySelectorAll('#journalBody tr').forEach(r => r.style.background = '');
+            tr.style.background = '#d9e8ff';
+            window._selectedIdx = realIdx;
+            // Remplir le formulaire
+            document.getElementById('date-intervention').value = i.date || '';
+            document.getElementById('debut').value = i.debut || '';
+            document.getElementById('fin').value = i.fin || '';
+            document.getElementById('client').value = i.client || '';
+            document.getElementById('adresse').value = i.adresse || '';
+            document.getElementById('numero').value = i.numero || '';
+            document.getElementById('donneur').value = i.donneur || '';
+            document.getElementById('descriptif').value = i.descriptif || '';
+            document.getElementById('montant').value = i.montant || '';
+        };
         tbody.appendChild(tr);
     });
 }
@@ -561,6 +581,24 @@ function ajouterIntervention() {
 
     updateJournal();
     renderCalendar();
+}
+
+function modifierSelectionne() {
+    if (window._selectedIdx === null || window._selectedIdx === undefined) {
+        alert('Clique sur une ligne du tableau pour la sélectionner.');
+        return;
+    }
+    modifierIntervention(window._selectedIdx);
+    window._selectedIdx = null;
+}
+
+function supprimerSelectionne() {
+    if (window._selectedIdx === null || window._selectedIdx === undefined) {
+        alert('Clique sur une ligne du tableau pour la sélectionner.');
+        return;
+    }
+    supprimerIntervention(window._selectedIdx);
+    window._selectedIdx = null;
 }
 
 function supprimerIntervention(idx) {
