@@ -258,7 +258,7 @@
 // ============================================================
 const CLIENT_ID = '857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleusercontent.com';
 const API_KEY   = 'AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
-const FILE_ID   = '1xFQZ09-zKB5RDUA7F_wXQkZnDLrcA_3t';
+let FILE_ID = null; // sera trouvé ou créé automatiquement
 const SCOPES    = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
@@ -309,10 +309,47 @@ function deconnecter() {
 }
 
 // ============================================================
+// TROUVER OU CRÉER LE FICHIER journal.json SUR DRIVE
+// ============================================================
+async function obtenirFileId() {
+    // 1. Cherche un fichier journal.json existant dans Drive
+    const liste = await gapi.client.drive.files.list({
+        q: "name='journal.json' and trashed=false",
+        fields: 'files(id, name)',
+        spaces: 'drive'
+    });
+    const fichiers = liste.result.files;
+    if (fichiers && fichiers.length > 0) {
+        FILE_ID = fichiers[0].id;
+        console.log('Fichier journal.json trouvé :', FILE_ID);
+        return;
+    }
+    // 2. Si introuvable → on le crée
+    console.log('Fichier journal.json introuvable, création...');
+    const res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + accessToken },
+            body: (() => {
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify({ name: 'journal.json', mimeType: 'application/json' })], { type: 'application/json' }));
+                form.append('file', new Blob(['[]'], { type: 'application/json' }));
+                return form;
+            })()
+        }
+    );
+    const data = await res.json();
+    FILE_ID = data.id;
+    console.log('Fichier journal.json créé :', FILE_ID);
+}
+
+// ============================================================
 // LECTURE DRIVE
 // ============================================================
 async function chargerJournalDepuisDrive() {
     try {
+        await obtenirFileId();
         const response = await gapi.client.drive.files.get({ fileId: FILE_ID, alt: 'media' });
         interventions = JSON.parse(response.body || '[]');
         console.log('Journal chargé :', interventions.length, 'interventions');
