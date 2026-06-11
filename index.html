@@ -1,95 +1,525 @@
-<!-- Nouvelles librairies Google (remplace l'ancienne) -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Agenda des interventions</title>
+<!-- Nouvelles librairies Google -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#f4f4f4; }
+    h1 { text-align:center; margin-bottom:10px; }
+
+    /* --- BARRE CONNEXION --- */
+    #barre-connexion {
+        max-width:900px;
+        margin:0 auto 10px auto;
+        display:flex;
+        align-items:center;
+        gap:12px;
+        background:white;
+        padding:8px 15px;
+        border-radius:8px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        font-size:13px;
+    }
+    #barre-connexion button {
+        padding:5px 12px;
+        cursor:pointer;
+        font-size:12px;
+        border:1px solid #007bff;
+        background:white;
+        color:#007bff;
+        border-radius:4px;
+    }
+    #barre-connexion button:hover { background:#007bff; color:white; }
+    #statut { color:#555; }
+    #statut.ok { color:#28a745; font-weight:bold; }
+
+    .calendar-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background:white;
+        border-radius:8px;
+        padding:15px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .calendar-header {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:10px;
+    }
+
+    .calendar-header button {
+        padding:5px 10px;
+        cursor:pointer;
+    }
+
+    .month-label {
+        font-size:20px;
+        font-weight:bold;
+        text-transform:capitalize;
+    }
+
+    .calendar-grid {
+        display:grid;
+        grid-template-columns: repeat(7, 1fr);
+        border:1px solid #ddd;
+        border-radius:4px;
+        overflow:hidden;
+    }
+
+    .day-name, .day-cell {
+        border:1px solid #eee;
+        min-height:90px;
+        padding:4px;
+        box-sizing:border-box;
+        font-size:12px;
+    }
+
+    .day-name {
+        background:#f0f0f0;
+        text-align:center;
+        font-weight:bold;
+    }
+
+    .day-number {
+        font-weight:bold;
+        margin-bottom:4px;
+    }
+
+    .day-cell {
+        background:white;
+        cursor:pointer;
+        position:relative;
+    }
+
+    .day-cell.other-month {
+        background:#fafafa;
+        color:#aaa;
+    }
+
+    .day-cell.today {
+        border:2px solid #007bff;
+    }
+
+    .day-cell.selected-day {
+        background:#d9e8ff !important;
+        border:2px solid #0057d8;
+    }
+
+    .event-line {
+        font-size:10px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+
+    .more-events {
+        font-size:10px;
+        color:#007bff;
+    }
+
+    /* --- FENÊTRE JOURNAL (MODAL) --- */
+    .modal-bg {
+        position:fixed;
+        top:0; left:0;
+        width:100%; height:100%;
+        background:rgba(0,0,0,0.5);
+        display:none;
+        justify-content:center;
+        align-items:center;
+        z-index:1000;
+    }
+
+    .modal {
+        background:white;
+        width:800px;
+        max-height:90vh;
+        overflow:auto;
+        border-radius:8px;
+        padding:20px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.3);
+        position:relative;
+    }
+
+    .close-btn {
+        position:absolute;
+        top:10px;
+        right:10px;
+        cursor:pointer;
+        font-size:20px;
+        font-weight:bold;
+    }
+
+    table { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+    th, td { border:1px solid #ccc; padding:6px; text-align:left; }
+    th { background:#e3e3e3; }
+
+    input[type="text"], input[type="number"], input[type="time"], textarea {
+        padding:4px;
+        margin:3px;
+        font-size:12px;
+    }
+
+    textarea {
+        width:98%;
+        resize:vertical;
+    }
+
+    .form-row { margin-bottom:5px; }
+
+    button { padding:6px 10px; margin:3px; cursor:pointer; font-size:12px; }
+
+    @media (max-width: 600px) {
+        .modal {
+            width:90vw !important;
+            height:85vh !important;
+            max-height:85vh !important;
+            padding:15px !important;
+            border-radius:12px;
+            font-size:16px;
+        }
+        input, textarea, button {
+            font-size:16px !important;
+            padding:10px !important;
+        }
+        table { font-size:14px !important; }
+        th, td { padding:8px !important; }
+        .close-btn { font-size:28px !important; top:8px; right:12px; }
+    }
+</style>
+</head>
+<body>
+
+<h1>Agenda des interventions</h1>
+
+<!-- Barre de connexion Google -->
+<div id="barre-connexion">
+    <span id="statut">Non connecté à Google Drive</span>
+    <button id="btn-connexion" onclick="demanderConnexion()">Se connecter</button>
+</div>
+
+<div class="calendar-container">
+    <div class="calendar-header">
+        <button onclick="changeMonth(-1)">&lt;</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button onclick="changeMonth(1)">&gt;</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+
+<!-- FENÊTRE JOURNAL -->
+<div class="modal-bg" id="modalBg">
+    <div class="modal">
+        <div class="close-btn" onclick="closeModal()">×</div>
+
+        <h2 id="journalTitle">Journal du jour</h2>
+
+        <div class="form-row">
+            <input type="time" id="debut" placeholder="Début">
+            <input type="time" id="fin" placeholder="Fin">
+            <input type="text" id="client" placeholder="Client">
+            <input type="text" id="donneur" placeholder="Donneur d'ordre">
+            <input type="text" id="adresse" placeholder="Adresse">
+        </div>
+
+        <div class="form-row">
+            <input type="text" id="numero" placeholder="Numéro intervention">
+            <textarea id="descriptif" placeholder="Descriptif" rows="3"></textarea>
+            <input type="number" id="montant" placeholder="Montant (€)" step="0.01">
+            <button onclick="ajouterIntervention()">Ajouter</button>
+            <button onclick="exportCSV()">Exporter tout en CSV</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Début</th>
+                    <th>Fin</th>
+                    <th>Client</th>
+                    <th>Donneur d'ordre</th>
+                    <th>Adresse</th>
+                    <th>Numéro intervention</th>
+                    <th>Descriptif</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody id="journalBody"></tbody>
+        </table>
+    </div>
+</div>
 
 <script>
+// ============================================================
+// CONFIG GOOGLE DRIVE
+// ============================================================
 const CLIENT_ID = '857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleusercontent.com';
 const API_KEY   = 'AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
-const FILE_ID   = '18FuqkytW5j1kbX60h79OubRNJpxswTs-b4d2vbh8Dsw';
+const FILE_ID   = '1xFQZ09-zKB5RDUA7F_wXQkZnDLrcA_3t';
 const SCOPES    = 'https://www.googleapis.com/auth/drive.file';
 
-let journal = [];
-let tokenClient; // ← nouveau avec GIS
+let tokenClient;
 let accessToken = null;
 
-// -------------------- INIT GAPI (sans auth2) --------------------
-function gapiLoaded() {
-  gapi.load('client', initGapiClient);
-}
-
-async function initGapiClient() {
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-    // ⚠️ Plus de clientId ni scope ici avec la nouvelle méthode
-  });
-
-  // Init du client token GIS
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: async (tokenResponse) => {
-      if (tokenResponse.error) {
-        console.error('Erreur token', tokenResponse);
-        return;
-      }
-      accessToken = tokenResponse.access_token;
-      await chargerJournalDepuisDrive();
-    }
-  });
-
-  // Demande le token (popup de connexion si nécessaire)
-  tokenClient.requestAccessToken({ prompt: '' });
-}
-
+// ============================================================
+// INIT GOOGLE (nouvelle méthode GIS — corrigée)
+// ============================================================
 window.addEventListener('load', () => {
-  gapiLoaded();
+    gapi.load('client', async () => {
+        await gapi.client.init({
+            apiKey: API_KEY,
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+        });
+
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: async (resp) => {
+                if (resp.error) { console.error(resp); return; }
+                accessToken = resp.access_token;
+                document.getElementById('statut').textContent = '✔ Connecté à Google Drive';
+                document.getElementById('statut').className = 'ok';
+                document.getElementById('btn-connexion').textContent = 'Déconnexion';
+                document.getElementById('btn-connexion').onclick = deconnecter;
+                await chargerJournalDepuisDrive();
+                renderCalendar();
+            }
+        });
+
+        // Tentative silencieuse (si déjà connecté)
+        tokenClient.requestAccessToken({ prompt: '' });
+    });
 });
 
-// -------------------- LECTURE DRIVE --------------------
-async function chargerJournalDepuisDrive() {
-  try {
-    const response = await gapi.client.drive.files.get({
-      fileId: FILE_ID,
-      alt: 'media'
-    });
-    journal = JSON.parse(response.body || '[]');
-    console.log('Journal chargé depuis Drive :', journal);
-    // afficherAgenda(journal); // ← ton affichage ici
-  } catch (err) {
-    console.error('Erreur lecture journal.json', err);
-    alert('Impossible de lire journal.json sur Drive.');
-  }
+function demanderConnexion() {
+    tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 
-// -------------------- ÉCRITURE DRIVE --------------------
-async function sauvegarderJournalDansDrive() {
-  if (!accessToken) {
-    alert('Non connecté à Google.');
-    return;
-  }
-  try {
-    const res = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files/' + FILE_ID + '?uploadType=multipart',
-      {
-        method: 'PATCH',
-        headers: { 'Authorization': 'Bearer ' + accessToken },
-        body: (() => {
-          const form = new FormData();
-          form.append('metadata', new Blob([JSON.stringify({
-            name: 'journal.json',
-            mimeType: 'application/json'
-          })], { type: 'application/json' }));
-          form.append('file', new Blob([JSON.stringify(journal)], { type: 'application/json' }));
-          return form;
-        })()
-      }
-    );
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    console.log('Journal sauvegardé sur Drive.');
-  } catch (err) {
-    console.error('Erreur écriture journal.json', err);
-    alert('Impossible d\'écrire journal.json sur Drive.');
-  }
+function deconnecter() {
+    google.accounts.oauth2.revoke(accessToken, () => {
+        accessToken = null;
+        document.getElementById('statut').textContent = 'Non connecté à Google Drive';
+        document.getElementById('statut').className = '';
+        document.getElementById('btn-connexion').textContent = 'Se connecter';
+        document.getElementById('btn-connexion').onclick = demanderConnexion;
+    });
 }
+
+// ============================================================
+// LECTURE DRIVE
+// ============================================================
+async function chargerJournalDepuisDrive() {
+    try {
+        const response = await gapi.client.drive.files.get({ fileId: FILE_ID, alt: 'media' });
+        interventions = JSON.parse(response.body || '[]');
+        console.log('Journal chargé :', interventions.length, 'interventions');
+    } catch (err) {
+        console.warn('Lecture Drive impossible, démarrage à vide.', err);
+        interventions = [];
+    }
+}
+
+// ============================================================
+// ÉCRITURE DRIVE
+// ============================================================
+async function sauvegarderJournalDansDrive() {
+    if (!accessToken) return; // pas connecté → on ne sauvegarde pas sur Drive
+    try {
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify({ name: 'journal.json', mimeType: 'application/json' })], { type: 'application/json' }));
+        form.append('file', new Blob([JSON.stringify(interventions)], { type: 'application/json' }));
+        const res = await fetch(
+            'https://www.googleapis.com/upload/drive/v3/files/' + FILE_ID + '?uploadType=multipart',
+            { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form }
+        );
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        console.log('Sauvegardé sur Drive.');
+    } catch (err) {
+        console.error('Erreur sauvegarde Drive', err);
+        alert('Impossible de sauvegarder sur Google Drive (voir console).');
+    }
+}
+
+// ============================================================
+// AGENDA (ton code original — intact)
+// ============================================================
+const dayNames = ["Lun.","Mar.","Mer.","Jeu.","Ven.","Sam.","Dim."];
+
+let interventions = [];
+let currentDate = new Date();
+let selectedDate = new Date();
+
+function formatDateISO(date) {
+    return date.toISOString().split("T")[0];
+}
+
+function formatDateFR(date) {
+    return date.toLocaleDateString("fr-FR");
+}
+
+function renderCalendar() {
+    const grid = document.getElementById("calendarGrid");
+    grid.innerHTML = "";
+
+    dayNames.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "day-name";
+        div.textContent = d;
+        grid.appendChild(div);
+    });
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const startDay = (firstDay.getDay() + 6) % 7;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    document.getElementById("monthLabel").textContent =
+        currentDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+
+    for (let i = 0; i < startDay; i++) {
+        const dayNum = daysInPrevMonth - startDay + 1 + i;
+        const cellDate = new Date(year, month - 1, dayNum);
+        createDayCell(grid, cellDate, true);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const cellDate = new Date(year, month, d);
+        createDayCell(grid, cellDate, false);
+    }
+
+    const totalCells = 7 + startDay + daysInMonth;
+    const remaining = 49 - totalCells;
+    for (let i = 1; i <= remaining; i++) {
+        const cellDate = new Date(year, month + 1, i);
+        createDayCell(grid, cellDate, true);
+    }
+}
+
+function createDayCell(grid, date, otherMonth) {
+    const div = document.createElement("div");
+    div.className = "day-cell";
+    if (otherMonth) div.classList.add("other-month");
+
+    const todayISO = formatDateISO(new Date());
+    const cellISO = formatDateISO(date);
+    if (cellISO === todayISO) div.classList.add("today");
+
+    const dayNumber = document.createElement("div");
+    dayNumber.className = "day-number";
+    dayNumber.textContent = date.getDate();
+    div.appendChild(dayNumber);
+
+    const todaysInterventions = interventions.filter(i => i.date === cellISO);
+
+    todaysInterventions.slice(0,3).forEach(ev => {
+        const line = document.createElement("div");
+        line.className = "event-line";
+        line.textContent = `${ev.debut} ${ev.client}`;
+        div.appendChild(line);
+    });
+
+    if (todaysInterventions.length > 3) {
+        const more = document.createElement("div");
+        more.className = "more-events";
+        more.textContent = `+${todaysInterventions.length - 3} autres`;
+        div.appendChild(more);
+    }
+
+    div.onclick = () => {
+        document.querySelectorAll(".day-cell").forEach(c => c.classList.remove("selected-day"));
+        div.classList.add("selected-day");
+        selectedDate = date;
+        openModal();
+        updateJournal();
+    };
+
+    grid.appendChild(div);
+}
+
+function changeMonth(delta) {
+    currentDate.setMonth(currentDate.getMonth() + delta);
+    renderCalendar();
+}
+
+function openModal() {
+    document.getElementById("modalBg").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("modalBg").style.display = "none";
+}
+
+function updateJournal() {
+    const tbody = document.getElementById("journalBody");
+    tbody.innerHTML = "";
+
+    const iso = formatDateISO(selectedDate);
+    document.getElementById("journalTitle").textContent =
+        "Journal du " + formatDateFR(selectedDate);
+
+    const list = interventions.filter(i => i.date === iso);
+
+    list.forEach(i => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${i.debut || ""}</td>
+            <td>${i.fin || ""}</td>
+            <td>${i.client || ""}</td>
+            <td>${i.donneur || ""}</td>
+            <td>${i.adresse || ""}</td>
+            <td>${i.numero || ""}</td>
+            <td>${i.descriptif || ""}</td>
+            <td>${i.montant || ""}€</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function ajouterIntervention() {
+    const iso = formatDateISO(selectedDate);
+    const i = {
+        date: iso,
+        debut: document.getElementById('debut').value,
+        fin: document.getElementById('fin').value,
+        client: document.getElementById('client').value,
+        donneur: document.getElementById('donneur').value,
+        adresse: document.getElementById('adresse').value,
+        numero: document.getElementById('numero').value,
+        descriptif: document.getElementById('descriptif').value,
+        montant: document.getElementById('montant').value
+    };
+    interventions.push(i);
+    sauvegarderJournalDansDrive(); // ← remplace saveData()
+
+    ["debut","fin","client","donneur","adresse","numero","descriptif","montant"]
+        .forEach(id => document.getElementById(id).value = "");
+
+    updateJournal();
+    renderCalendar();
+}
+
+function exportCSV() {
+    let csv = "Date;Début;Fin;Client;Donneur d'ordre;Adresse;Numéro intervention;Descriptif;Montant\n";
+    interventions.forEach(i => {
+        csv += `${i.date};${i.debut||""};${i.fin||""};${i.client||""};${i.donneur||""};${i.adresse||""};${i.numero||""};${i.descriptif||""};${i.montant||""}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "journal_interventions.csv";
+    link.click();
+}
+
+renderCalendar();
 </script>
+
+</body>
+</html>
