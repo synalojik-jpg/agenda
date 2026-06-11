@@ -1,123 +1,95 @@
-<!-- Charge la librairie Google -->
+<!-- Nouvelles librairies Google (remplace l'ancienne) -->
 <script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 
 <script>
 const CLIENT_ID = '857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleusercontent.com';
 const API_KEY   = 'AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const FILE_ID   = '18FuqkytW5j1kbX60h79OubRNJpxswTs-b4d2vbh8Dsw';
+const SCOPES    = 'https://www.googleapis.com/auth/drive.file';
 
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const DISCOVERY_DOCS = [
-  'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
-];
+let journal = [];
+let tokenClient; // ← nouveau avec GIS
+let accessToken = null;
 
-let journal = []; // ton tableau d’événements (remplace ton ancien localStorage)
-
-// -------------------- INIT GAPI + AUTH --------------------
-
+// -------------------- INIT GAPI (sans auth2) --------------------
 function gapiLoaded() {
-  gapi.load('client:auth2', initClient);
+  gapi.load('client', initGapiClient);
 }
 
-function initClient() {
-  gapi.client.init({
+async function initGapiClient() {
+  await gapi.client.init({
     apiKey: API_KEY,
-    clientId: CLIENT_ID,
-    discoveryDocs: DISCOVERY_DOCS,
-    scope: SCOPES,
-	cookiePolicy: 'single_host_origin'
-  }).then(async () => {
-    const auth = gapi.auth2.getAuthInstance();
-
-    if (!auth.isSignedIn.get()) {
-      await auth.signIn();
-    }
-
-    // Une fois connecté → on charge le journal depuis Drive
-    await chargerJournalDepuisDrive();
-    // Ici tu peux appeler ta fonction d’affichage existante, par ex :
-    // afficherAgenda(journal);
-  }).catch(err => {
-    console.error('Erreur initClient', err);
-    alert('Erreur d’initialisation Google API (voir console).');
+    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+    // ⚠️ Plus de clientId ni scope ici avec la nouvelle méthode
   });
+
+  // Init du client token GIS
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (tokenResponse) => {
+      if (tokenResponse.error) {
+        console.error('Erreur token', tokenResponse);
+        return;
+      }
+      accessToken = tokenResponse.access_token;
+      await chargerJournalDepuisDrive();
+    }
+  });
+
+  // Demande le token (popup de connexion si nécessaire)
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 window.addEventListener('load', () => {
   gapiLoaded();
 });
 
-// -------------------- LECTURE / ÉCRITURE DRIVE --------------------
-
+// -------------------- LECTURE DRIVE --------------------
 async function chargerJournalDepuisDrive() {
   try {
     const response = await gapi.client.drive.files.get({
       fileId: FILE_ID,
       alt: 'media'
     });
-
-    const body = response.body || '[]';
-    journal = JSON.parse(body);
-
+    journal = JSON.parse(response.body || '[]');
     console.log('Journal chargé depuis Drive :', journal);
-    // Ici tu peux rafraîchir ton interface :
-    // afficherAgenda(journal);
-
+    // afficherAgenda(journal); // ← ton affichage ici
   } catch (err) {
     console.error('Erreur lecture journal.json', err);
-    alert('Impossible de lire journal.json sur Drive (voir console).');
+    alert('Impossible de lire journal.json sur Drive.');
   }
 }
 
+// -------------------- ÉCRITURE DRIVE --------------------
 async function sauvegarderJournalDansDrive() {
+  if (!accessToken) {
+    alert('Non connecté à Google.');
+    return;
+  }
   try {
-    const fileContent = JSON.stringify(journal);
-    const metadata = {
-      name: 'journal.json',
-      mimeType: 'application/json'
-    };
-
-    const accessToken = gapi.auth.getToken().access_token;
-
-    const form = new FormData();
-    form.append(
-      'metadata',
-      new Blob([JSON.stringify(metadata)], { type: 'application/json' })
-    );
-    form.append(
-      'file',
-      new Blob([fileContent], { type: 'application/json' })
-    );
-
     const res = await fetch(
       'https://www.googleapis.com/upload/drive/v3/files/' + FILE_ID + '?uploadType=multipart',
       {
         method: 'PATCH',
-        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-        body: form
+        headers: { 'Authorization': 'Bearer ' + accessToken },
+        body: (() => {
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify({
+            name: 'journal.json',
+            mimeType: 'application/json'
+          })], { type: 'application/json' }));
+          form.append('file', new Blob([JSON.stringify(journal)], { type: 'application/json' }));
+          return form;
+        })()
       }
     );
-
-    if (!res.ok) {
-      throw new Error('HTTP ' + res.status);
-    }
-
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     console.log('Journal sauvegardé sur Drive.');
   } catch (err) {
     console.error('Erreur écriture journal.json', err);
-    alert('Impossible d’écrire journal.json sur Drive (voir console).');
+    alert('Impossible d\'écrire journal.json sur Drive.');
   }
 }
-
-// -------------------- EXEMPLES D’INTÉGRATION --------------------
-// À adapter à ton code existant :
-// - quand tu ajoutes / modifies / supprimes un événement dans "journal",
-//   tu appelles ensuite : sauvegarderJournalDansDrive();
-//
-// Exemple :
-// function ajouterEvenement(evenement) {
-//   journal.push(evenement);
-//   // mettre à jour ton interface ici
-//   sauvegarderJournalDansDrive();
-// }
 </script>
