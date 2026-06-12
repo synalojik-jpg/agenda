@@ -787,7 +787,7 @@ function ajouterIntervention() {
 }
 
 function modifierSelectionne() {
-  if (window._selectedIdx === null || window._selectedIdx === undefined) { alert('Sélectionne une ligne du tableau.'); return; }
+  if (window._selectedIdx === null || window._selectedIdx === undefined) { alert('Clique d\'abord sur une intervention dans le calendrier.'); return; }
   const idx = window._selectedIdx;
   interventions[idx] = {
     ...interventions[idx],
@@ -803,18 +803,18 @@ function modifierSelectionne() {
   };
   sauvegarderJournalDansDrive();
   viderFormulaire();
-  updateJournal();
   renderCalendar();
+  closeModal();
 }
 
 function supprimerSelectionne() {
-  if (window._selectedIdx === null || window._selectedIdx === undefined) { alert('Sélectionne une ligne du tableau.'); return; }
+  if (window._selectedIdx === null || window._selectedIdx === undefined) { alert('Clique d\'abord sur une intervention dans le calendrier.'); return; }
   if (!confirm('Supprimer cette intervention ?')) return;
   interventions.splice(window._selectedIdx, 1);
   sauvegarderJournalDansDrive();
   viderFormulaire();
-  updateJournal();
   renderCalendar();
+  closeModal();
 }
 
 function exportCSVMois() {
