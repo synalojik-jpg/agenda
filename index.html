@@ -222,6 +222,13 @@ const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août'
 
 // ---- AUTH ----
 window.addEventListener('load', () => {
+  // Charger les données locales immédiatement (hors connexion ou en attente)
+  const local = localStorage.getItem('synalojik_interventions');
+  if (local) {
+    interventions = JSON.parse(local);
+    renderCalendar();
+  }
+
   gapi.load('client', async () => {
     await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
     tokenClient = google.accounts.oauth2.initTokenClient({
@@ -264,10 +271,22 @@ async function obtenirFileId() {
   FILE_ID = (await res.json()).id;
 }
 async function chargerJournalDepuisDrive() {
-  try { await obtenirFileId(); const r = await gapi.client.drive.files.get({ fileId: FILE_ID, alt: 'media' }); interventions = JSON.parse(r.body || '[]'); }
-  catch(e) { interventions = []; }
+  try {
+    await obtenirFileId();
+    const r = await gapi.client.drive.files.get({ fileId: FILE_ID, alt: 'media' });
+    interventions = JSON.parse(r.body || '[]');
+    // Sauvegarde locale pour accès hors connexion
+    localStorage.setItem('synalojik_interventions', JSON.stringify(interventions));
+    console.log('Données sauvegardées localement.');
+  } catch(e) {
+    console.warn('Drive inaccessible, chargement local...');
+    const local = localStorage.getItem('synalojik_interventions');
+    interventions = local ? JSON.parse(local) : [];
+  }
 }
 async function sauvegarderJournalDansDrive() {
+  // Toujours sauvegarder en local
+  localStorage.setItem('synalojik_interventions', JSON.stringify(interventions));
   if (!accessToken) return;
   try {
     const form = new FormData();
