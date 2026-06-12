@@ -8,431 +8,118 @@
 <script src="https://accounts.google.com/gsi/client"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
-    --bleu: #1a3ed4;
-    --bleu-fonce: #0f2490;
-    --rouge: #d41a1a;
-    --rouge-clair: #ff2a2a;
-    --noir: #0a0a14;
-    --surface: #ffffff;
-    --bg: #f0f2f8;
-    --border: #dde2f0;
-    --text: #1a1a2e;
-    --text-muted: #6b7280;
-    --radius: 10px;
-    --shadow: 0 2px 12px rgba(26,62,212,0.10);
+    --bleu:#1a3ed4; --bleu-fonce:#0f2490; --rouge:#d41a1a; --rouge-clair:#ff2a2a;
+    --noir:#0a0a14; --surface:#ffffff; --bg:#f0f2f8; --border:#dde2f0;
+    --text:#1a1a2e; --text-muted:#6b7280; --radius:10px;
+    --shadow:0 2px 12px rgba(26,62,212,0.10);
   }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+  /* HEADER */
+  header { background:linear-gradient(135deg,var(--noir) 0%,var(--bleu-fonce) 100%); padding:10px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 3px 15px rgba(0,0,0,0.4); position:sticky; top:0; z-index:100; }
+  .header-logo { display:flex; align-items:center; gap:12px; }
+  .header-logo img { height:52px; filter:drop-shadow(0 0 8px rgba(212,26,26,0.5)); }
+  .header-title { display:flex; flex-direction:column; }
+  .header-title span:first-child { font-family:'Rajdhani',sans-serif; font-size:1.4rem; font-weight:700; color:#fff; letter-spacing:2px; text-transform:uppercase; }
+  .header-title span:last-child { font-size:0.7rem; color:rgba(255,255,255,0.6); letter-spacing:1px; text-transform:uppercase; }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  #statut { font-size:0.75rem; color:rgba(255,255,255,0.6); display:flex; align-items:center; gap:6px; }
+  #statut .dot { width:8px; height:8px; border-radius:50%; background:#666; flex-shrink:0; }
+  #statut.ok { color:#4ade80; }
+  #statut.ok .dot { background:#4ade80; box-shadow:0 0 6px #4ade80; }
+  #btn-connexion { background:linear-gradient(135deg,var(--rouge),var(--rouge-clair)); color:white; border:none; padding:8px 16px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; text-transform:uppercase; }
 
-  /* ---- HEADER ---- */
-  header {
-    background: linear-gradient(135deg, var(--noir) 0%, var(--bleu-fonce) 100%);
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.4);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .header-logo img {
-    height: 56px;
-    filter: drop-shadow(0 0 8px rgba(212,26,26,0.5));
-  }
-  .header-title {
-    display: flex;
-    flex-direction: column;
-  }
-  .header-title span:first-child {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .header-title span:last-child {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.6);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #statut {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.6);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  #statut .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #666;
-    flex-shrink: 0;
-  }
-  #statut.ok { color: #4ade80; }
-  #statut.ok .dot { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
-  #btn-connexion {
-    background: linear-gradient(135deg, var(--rouge), var(--rouge-clair));
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: opacity 0.2s;
-  }
-  #btn-connexion:hover { opacity: 0.85; }
-
-  /* ---- CALENDRIER CONTAINER ---- */
-  .cal-wrapper {
-    max-width: 960px;
-    margin: 20px auto;
-    padding: 0 12px;
-  }
-
-  /* ---- NAV MOIS ---- */
-  .cal-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(135deg, var(--bleu-fonce), var(--bleu));
-    border-radius: var(--radius) var(--radius) 0 0;
-    padding: 12px 16px;
-  }
-  .cal-nav-left { display: flex; align-items: center; gap: 8px; }
-  .btn-nav {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: white;
-    width: 34px; height: 34px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
-  }
-  .btn-nav:hover { background: rgba(255,255,255,0.3); }
-  #titre-mois {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: white;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  #btn-export-mois {
-    background: linear-gradient(135deg, var(--rouge), var(--rouge-clair));
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    white-space: nowrap;
-    transition: opacity 0.2s;
-  }
-  #btn-export-mois:hover { opacity: 0.85; }
-
-  /* ---- GRILLE ---- */
-  .cal-grid {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 var(--radius) var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-  }
-  .cal-day-names {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    background: linear-gradient(135deg, #1a2a6e, var(--bleu));
-  }
-  .cal-day-names div {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: rgba(255,255,255,0.85);
-    padding: 8px 0;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-family: 'Rajdhani', sans-serif;
-  }
-  .cal-body {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-  }
-  .cal-cell {
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    min-height: 90px;
-    padding: 5px;
-    cursor: pointer;
-    transition: background 0.15s;
-    position: relative;
-  }
-  .cal-cell:nth-child(7n) { border-right: none; }
-  .cal-cell:hover { background: #f0f4ff; }
-  .cal-cell.autre-mois { background: #fafafa; }
-  .cal-cell.autre-mois .num-jour { color: #ccc; }
-  .cal-cell.today {
-    background: linear-gradient(135deg, #eef1ff, #f5f0ff);
-    border-left: 3px solid var(--bleu);
-  }
-  .cal-cell.today .num-jour {
-    background: linear-gradient(135deg, var(--bleu), var(--rouge));
-    color: white;
-    border-radius: 50%;
-    width: 26px; height: 26px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .num-jour {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 3px;
-    width: 26px; height: 26px;
-    display: flex; align-items: center; justify-content: center;
-  }
+  /* CALENDRIER */
+  .cal-wrapper { max-width:960px; margin:20px auto; padding:0 12px; }
+  .cal-nav { background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu)); border-radius:var(--radius) var(--radius) 0 0; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
+  .cal-nav-left { display:flex; align-items:center; gap:8px; }
+  .btn-nav { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:white; width:34px; height:34px; border-radius:6px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+  .btn-nav:hover { background:rgba(255,255,255,0.3); }
+  #titre-mois { font-family:'Rajdhani',sans-serif; font-size:1.4rem; font-weight:700; color:white; letter-spacing:2px; text-transform:uppercase; }
+  #btn-export-mois { background:linear-gradient(135deg,var(--rouge),var(--rouge-clair)); color:white; border:none; padding:8px 14px; border-radius:6px; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+  .cal-grid { background:var(--surface); border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius) var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+  .cal-day-names { display:grid; grid-template-columns:repeat(7,1fr); background:linear-gradient(135deg,#1a2a6e,var(--bleu)); }
+  .cal-day-names div { text-align:center; font-size:0.72rem; font-weight:600; color:rgba(255,255,255,0.85); padding:8px 0; letter-spacing:1px; text-transform:uppercase; font-family:'Rajdhani',sans-serif; }
+  .cal-body { display:grid; grid-template-columns:repeat(7,1fr); }
+  .cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-height:80px; max-height:80px; overflow:hidden; padding:4px; cursor:pointer; position:relative; }
+  .cal-cell:nth-child(7n) { border-right:none; }
+  .cal-cell:hover { background:#f0f4ff; }
+  .cal-cell.autre-mois { background:#fafafa; }
+  .cal-cell.autre-mois .num-jour { color:#ccc; }
+  .cal-cell.today { background:linear-gradient(135deg,#eef1ff,#f5f0ff); border-left:3px solid var(--bleu); }
+  .cal-cell.today .num-jour { background:linear-gradient(135deg,var(--bleu),var(--rouge)); color:white; border-radius:50%; }
+  .num-jour { font-size:0.82rem; font-weight:600; color:var(--text); margin-bottom:2px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .ev-chip {
-    display: block;
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 5px;
-    border-radius: 3px;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    background: linear-gradient(135deg, var(--bleu), #3a5ef0);
-    color: white;
+    display:block; font-size:0.62rem; font-weight:600; padding:1px 4px;
+    border-radius:3px; margin-bottom:1px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    background:linear-gradient(135deg,var(--bleu),#3a5ef0); color:white;
+    cursor:pointer; height:16px; line-height:16px; max-width:100%;
   }
-  .ev-plus {
-    font-size: 0.65rem;
-    color: var(--bleu);
-    font-weight: 600;
-    padding-left: 3px;
-  }
+  .ev-chip:hover { opacity:0.8; }
+  .ev-plus { font-size:0.6rem; color:var(--bleu); font-weight:600; padding-left:2px; white-space:nowrap; }
 
-  /* ---- MODAL ---- */
-  .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 200;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 20px 10px;
-    overflow-y: auto;
-  }
-  .overlay.visible { display: flex; }
-  .modal {
-    background: var(--surface);
-    border-radius: 14px;
-    width: 100%;
-    max-width: 680px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
-    overflow: hidden;
-    animation: slideDown 0.2s ease;
-    margin: auto;
-  }
-  @keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to   { transform: translateY(0); opacity: 1; }
-  }
-  .modal-header {
-    background: linear-gradient(135deg, var(--noir), var(--bleu-fonce));
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .modal-header h2 {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: white;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  .modal-close {
-    background: rgba(255,255,255,0.15);
-    border: none;
-    color: white;
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1.1rem;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .modal-body { padding: 20px; }
+  /* STATS */
+  .cal-stats { max-width:960px; margin:12px auto 20px auto; padding:0 12px; display:flex; gap:10px; flex-wrap:wrap; }
+  .stat-card { flex:1; min-width:140px; background:white; border-radius:var(--radius); padding:12px 16px; box-shadow:var(--shadow); border-left:4px solid var(--bleu); }
+  .stat-card.rouge { border-left-color:var(--rouge); }
+  .stat-label { font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:4px; }
+  .stat-value { font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; color:var(--text); }
 
-  .btn-export-top {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, var(--bleu), #3a5ef0);
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 16px;
-    font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
+  /* MODAL */
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; align-items:flex-start; justify-content:center; padding:16px 10px; overflow-y:auto; }
+  .overlay.visible { display:flex; }
+  .modal { background:var(--surface); border-radius:14px; width:100%; max-width:680px; box-shadow:0 8px 40px rgba(0,0,0,0.3); overflow:hidden; animation:slideDown 0.2s ease; margin:auto; }
+  @keyframes slideDown { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-header { background:linear-gradient(135deg,var(--noir),var(--bleu-fonce)); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+  .modal-header h2 { font-family:'Rajdhani',sans-serif; font-size:1.1rem; font-weight:700; color:white; letter-spacing:1px; text-transform:uppercase; }
+  .modal-close { background:rgba(255,255,255,0.15); border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; }
+  .modal-body { padding:16px; }
 
-  .form-field {
-    margin-bottom: 10px;
-  }
-  .form-field label {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 4px;
-  }
-  .form-field input,
-  .form-field textarea {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    font-family: 'Inter', sans-serif;
-    border: 1.5px solid var(--border);
-    border-radius: 7px;
-    color: var(--text);
-    background: #ffffff;
-    transition: border-color 0.15s;
-    outline: none;
-    -webkit-appearance: none;
-    opacity: 1;
-  }
-  .form-field input:focus,
-  .form-field textarea:focus { border-color: var(--bleu); }
-  .form-field textarea { resize: vertical; min-height: 70px; }
-  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* LISTE INTERVENTIONS */
+  .inter-list { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .inter-vide { font-size:0.82rem; color:var(--text-muted); text-align:center; padding:10px; }
+  .inter-item { background:#f5f7ff; border:1.5px solid var(--border); border-radius:8px; padding:10px 14px; cursor:pointer; transition:all 0.15s; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .inter-item:hover { border-color:var(--bleu); background:#eef1ff; }
+  .inter-item.selected { border-color:var(--rouge); background:#fff0f0; }
+  .inter-item-left { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .inter-item-client { font-weight:600; font-size:0.9rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inter-item-detail { font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inter-item-montant { font-family:'Rajdhani',sans-serif; font-size:1rem; font-weight:700; color:var(--bleu); white-space:nowrap; flex-shrink:0; }
 
-  /* Boutons action */
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-top: 14px;
-  }
-  .btn-ajouter {
-    background: linear-gradient(135deg, #16a34a, #22c55e);
-    color: white; border: none; padding: 12px;
-    border-radius: 8px; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 1px; text-transform: uppercase;
-  }
-  .btn-modifier {
-    background: linear-gradient(135deg, #d97706, #f59e0b);
-    color: white; border: none; padding: 12px;
-    border-radius: 8px; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 1px; text-transform: uppercase;
-  }
-  .btn-supprimer {
-    background: linear-gradient(135deg, var(--rouge), var(--rouge-clair));
-    color: white; border: none; padding: 12px;
-    border-radius: 8px; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 1px; text-transform: uppercase;
-  }
+  .separator { border:none; border-top:1px solid var(--border); margin:12px 0; }
 
-  /* Tableau */
-  .table-wrap { overflow-x: auto; margin-top: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-  thead tr { background: linear-gradient(135deg, var(--bleu-fonce), var(--bleu)); }
-  thead th {
-    color: white; padding: 8px 6px;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 0.78rem; letter-spacing: 1px;
-    text-transform: uppercase; font-weight: 600;
-    text-align: left; white-space: nowrap;
+  /* FORMULAIRE */
+  .form-field { margin-bottom:8px; }
+  .form-field label { display:block; font-size:0.7rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px; }
+  .form-field input, .form-field textarea {
+    width:100%; padding:9px 12px; font-size:0.88rem; font-family:'Inter',sans-serif;
+    border:1.5px solid var(--border); border-radius:7px; color:var(--text); background:#fff;
+    transition:border-color 0.15s; outline:none; -webkit-appearance:none; opacity:1;
+    text-transform:uppercase;
   }
-  tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
-  tbody tr:hover { background: #f0f4ff; }
-  tbody tr.selected { background: #dde8ff !important; }
-  tbody td { padding: 7px 6px; }
+  .form-field input[type="date"], .form-field input[type="time"], .form-field input[type="number"] { text-transform:none; }
+  .form-field input:focus, .form-field textarea:focus { border-color:var(--bleu); }
+  .form-field textarea { resize:vertical; min-height:60px; text-transform:uppercase; }
+  .form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
-  /* FOOTER stats */
-  .cal-stats {
-    max-width: 960px;
-    margin: 12px auto 20px auto;
-    padding: 0 12px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .stat-card {
-    flex: 1;
-    min-width: 140px;
-    background: white;
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    box-shadow: var(--shadow);
-    border-left: 4px solid var(--bleu);
-  }
-  .stat-card.rouge { border-left-color: var(--rouge); }
-  .stat-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .stat-value {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-  }
+  .btn-export-top { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,var(--bleu),#3a5ef0); color:white; border:none; padding:7px 14px; border-radius:6px; font-size:0.8rem; font-weight:600; cursor:pointer; margin-bottom:12px; font-family:'Rajdhani',sans-serif; letter-spacing:1px; text-transform:uppercase; }
 
-  @media (max-width: 600px) {
-    .header-title span:first-child { font-size: 1.1rem; }
-    .header-logo img { height: 44px; }
-    #statut span:not(.dot) { display: none; }
-    .cal-cell { min-height: 60px; }
-    .form-row-2 { grid-template-columns: 1fr; }
-    .btn-row { grid-template-columns: 1fr; }
-    #titre-mois { font-size: 1.1rem; }
+  .btn-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px; }
+  .btn-ajouter { background:linear-gradient(135deg,#16a34a,#22c55e); color:white; border:none; padding:11px; border-radius:8px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; text-transform:uppercase; }
+  .btn-modifier { background:linear-gradient(135deg,#d97706,#f59e0b); color:white; border:none; padding:11px; border-radius:8px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; text-transform:uppercase; }
+  .btn-supprimer { background:linear-gradient(135deg,var(--rouge),var(--rouge-clair)); color:white; border:none; padding:11px; border-radius:8px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:'Rajdhani',sans-serif; letter-spacing:1px; text-transform:uppercase; }
+
+  @media (max-width:600px) {
+    .header-title span:first-child { font-size:1.1rem; }
+    .header-logo img { height:44px; }
+    #statut span:not(.dot) { display:none; }
+    .form-row-2 { grid-template-columns:1fr; }
+    .btn-row { grid-template-columns:1fr; }
+    #titre-mois { font-size:1rem; }
+    .cal-cell { min-height:65px; max-height:65px; }
   }
 </style>
 </head>
@@ -491,55 +178,32 @@
     <div class="modal-body">
       <button class="btn-export-top" onclick="exportCSVMois()">⬇ Exporter tout en CSV</button>
 
+      <div class="inter-list" id="interList"></div>
+
+      <hr class="separator">
+
       <div class="form-row-2">
-        <div class="form-field">
-          <label>Date</label>
-          <input type="date" id="date-intervention">
-        </div>
-        <div class="form-field">
-          <label>Client</label>
-          <input type="text" id="client" placeholder="Nom du client">
-        </div>
+        <div class="form-field"><label>Date</label><input type="date" id="date-intervention"></div>
+        <div class="form-field"><label>Client</label><input type="text" id="client" placeholder="Nom du client"></div>
       </div>
       <div class="form-row-2">
-        <div class="form-field">
-          <label>Heure début</label>
-          <input type="time" id="debut">
-        </div>
-        <div class="form-field">
-          <label>Heure fin</label>
-          <input type="time" id="fin">
-        </div>
+        <div class="form-field"><label>Heure début</label><input type="time" id="debut"></div>
+        <div class="form-field"><label>Heure fin</label><input type="time" id="fin"></div>
       </div>
-      <div class="form-field">
-        <label>Adresse</label>
-        <input type="text" id="adresse" placeholder="Adresse de l'intervention">
-      </div>
+      <div class="form-field"><label>Adresse</label><input type="text" id="adresse" placeholder="Adresse"></div>
       <div class="form-row-2">
-        <div class="form-field">
-          <label>Numéro intervention</label>
-          <input type="text" id="numero" placeholder="Référence">
-        </div>
-        <div class="form-field">
-          <label>Donneur d'ordre</label>
-          <input type="text" id="donneur" placeholder="Donneur d'ordre">
-        </div>
+        <div class="form-field"><label>N° intervention</label><input type="text" id="numero" placeholder="Référence"></div>
+        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="donneur" placeholder="Donneur d'ordre"></div>
       </div>
-      <div class="form-field">
-        <label>Descriptif</label>
-        <textarea id="descriptif" placeholder="Description de l'intervention"></textarea>
-      </div>
-      <div class="form-field">
-        <label>Montant (€)</label>
-        <input type="number" id="montant" placeholder="0.00" step="0.01">
-      </div>
+      <div class="form-field"><label>Descriptif</label><textarea id="descriptif" placeholder="Description"></textarea></div>
+      <div class="form-field"><label>Montant (€)</label><input type="number" id="montant" placeholder="0.00" step="0.01"></div>
 
       <div class="btn-row">
         <button class="btn-ajouter" onclick="ajouterIntervention()">✔ Ajouter</button>
         <button class="btn-modifier" onclick="modifierSelectionne()">✏ Modifier</button>
         <button class="btn-supprimer" onclick="supprimerSelectionne()">🗑 Supprimer</button>
       </div>
-      </div>
+    </div>
   </div>
 </div>
 
@@ -547,23 +211,16 @@
 const CLIENT_ID = '857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleusercontent.com';
 const API_KEY   = 'AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES    = 'https://www.googleapis.com/auth/drive.file';
-let FILE_ID = null;
-let tokenClient, accessToken = null;
-let interventions = [];
-let currentDate = new Date();
-let selectedDate = new Date();
-window._selectedIdx = null;
+let FILE_ID = null, tokenClient, accessToken = null;
+let interventions = [], currentDate = new Date(), selectedDate = new Date(), selectedIdx = null;
+const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
-// ---- GOOGLE AUTH ----
+// ---- AUTH ----
 window.addEventListener('load', () => {
   gapi.load('client', async () => {
-    await gapi.client.init({
-      apiKey: API_KEY,
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-    });
+    await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
     tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
+      client_id: CLIENT_ID, scope: SCOPES,
       callback: async (resp) => {
         if (resp.error) return;
         accessToken = resp.access_token;
@@ -574,7 +231,6 @@ window.addEventListener('load', () => {
         document.getElementById('btn-connexion').onclick = deconnecter;
         await chargerJournalDepuisDrive();
         renderCalendar();
-        updateStats();
       }
     });
     tokenClient.requestAccessToken({ prompt: '' });
@@ -603,11 +259,8 @@ async function obtenirFileId() {
   FILE_ID = (await res.json()).id;
 }
 async function chargerJournalDepuisDrive() {
-  try {
-    await obtenirFileId();
-    const r = await gapi.client.drive.files.get({ fileId: FILE_ID, alt: 'media' });
-    interventions = JSON.parse(r.body || '[]');
-  } catch(e) { interventions = []; }
+  try { await obtenirFileId(); const r = await gapi.client.drive.files.get({ fileId: FILE_ID, alt: 'media' }); interventions = JSON.parse(r.body || '[]'); }
+  catch(e) { interventions = []; }
 }
 async function sauvegarderJournalDansDrive() {
   if (!accessToken) return;
@@ -619,32 +272,25 @@ async function sauvegarderJournalDansDrive() {
   } catch(e) { console.error(e); }
 }
 
-// ---- CALENDRIER ----
+// ---- UTILS ----
 function formatDateISO(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth()+1).padStart(2,'0');
-  const d = String(date.getDate()).padStart(2,'0');
-  return y+'-'+m+'-'+d;
+  return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
 }
 function formatDateFR(date) { return date.toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); }
-const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
+// ---- CALENDRIER ----
 function renderCalendar() {
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const year = currentDate.getFullYear(), month = currentDate.getMonth();
   document.getElementById('titre-mois').textContent = MOIS[month] + ' ' + year;
   const grid = document.getElementById('calendarGrid');
   grid.innerHTML = '';
-  const firstDay = new Date(year, month, 1);
-  const startDay = (firstDay.getDay() + 6) % 7;
+  const startDay = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month+1, 0).getDate();
-  const daysInPrev = new Date(year, month, 0).getDate();
   const total = Math.ceil((startDay + daysInMonth) / 7) * 7;
   const todayISO = formatDateISO(new Date());
 
   for (let i = 0; i < total; i++) {
-    const offset = i - startDay;
-    const date = new Date(year, month, 1 + offset);
+    const date = new Date(year, month, 1 + i - startDay);
     const ds = formatDateISO(date);
     const isThisMonth = date.getMonth() === month;
     const isToday = ds === todayISO;
@@ -658,51 +304,91 @@ function renderCalendar() {
     cell.appendChild(num);
 
     const evs = interventions.filter(e => e.date === ds);
-    evs.slice(0,2).forEach(ev => {
+    // Max 2 chips visibles pour ne pas agrandir la case
+    evs.slice(0, 2).forEach(ev => {
       const chip = document.createElement('div');
       chip.className = 'ev-chip';
-      chip.textContent = (ev.debut ? ev.debut+' ' : '') + (ev.client || '');
+      chip.textContent = (ev.debut ? ev.debut + ' ' : '') + (ev.client || '');
+      chip.title = chip.textContent; // tooltip au survol
       chip.onclick = (e) => {
         e.stopPropagation();
-        const realIdx = interventions.findIndex(x => x === ev);
         selectedDate = date;
-        ouvrirEnEdition(realIdx);
+        const idx = interventions.indexOf(ev);
+        openModal(ds, idx);
       };
       cell.appendChild(chip);
     });
     if (evs.length > 2) {
       const plus = document.createElement('div');
       plus.className = 'ev-plus';
-      plus.textContent = '+' + (evs.length-2) + ' autres';
+      plus.textContent = '+' + (evs.length - 2);
       cell.appendChild(plus);
     }
 
-    cell.onclick = () => { selectedDate = date; openModal(); updateJournal(); };
+    cell.onclick = () => { selectedDate = date; openModal(ds, null); };
     grid.appendChild(cell);
   }
   updateStats();
 }
 
-function changeMonth(delta) {
-  currentDate.setMonth(currentDate.getMonth() + delta);
-  renderCalendar();
-}
+function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
 
 function updateStats() {
-  const year = currentDate.getFullYear();
-  const month = String(currentDate.getMonth()+1).padStart(2,'0');
-  const prefix = year + '-' + month;
+  const prefix = currentDate.getFullYear() + '-' + String(currentDate.getMonth()+1).padStart(2,'0');
   const liste = interventions.filter(i => i.date && i.date.startsWith(prefix));
   document.getElementById('stat-count').textContent = liste.length;
-  const total = liste.reduce((sum, i) => sum + (parseFloat(i.montant) || 0), 0);
-  document.getElementById('stat-total').textContent = total.toFixed(2) + ' €';
+  document.getElementById('stat-total').textContent = liste.reduce((s,i) => s + (parseFloat(i.montant)||0), 0).toFixed(2) + ' €';
 }
 
 // ---- MODAL ----
-function ouvrirEnEdition(idx) {
+function openModal(ds, preselectedIdx) {
+  selectedIdx = preselectedIdx !== undefined ? preselectedIdx : null;
+  document.getElementById('modalTitle').textContent = 'Journal du ' + formatDateFR(selectedDate);
+  document.getElementById('modalOverlay').classList.add('visible');
+  renderInterList(ds);
+  if (selectedIdx !== null) remplirFormulaire(selectedIdx);
+  else viderFormulaire();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('visible');
+  viderFormulaire();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+// ---- LISTE DU JOUR ----
+function renderInterList(ds) {
+  const list = document.getElementById('interList');
+  list.innerHTML = '';
+  const evs = interventions.filter(e => e.date === ds);
+  if (evs.length === 0) {
+    list.innerHTML = '<div class="inter-vide">Aucune intervention ce jour</div>';
+    return;
+  }
+  evs.forEach(ev => {
+    const idx = interventions.indexOf(ev);
+    const item = document.createElement('div');
+    item.className = 'inter-item' + (idx === selectedIdx ? ' selected' : '');
+    item.innerHTML = `
+      <div class="inter-item-left">
+        <div class="inter-item-client">${ev.client || '—'}</div>
+        <div class="inter-item-detail">${ev.debut || ''}  ${ev.fin ? '→ ' + ev.fin : ''} ${ev.adresse ? '· ' + ev.adresse : ''}</div>
+      </div>
+      <div class="inter-item-montant">${ev.montant ? ev.montant + ' €' : ''}</div>
+    `;
+    item.onclick = () => {
+      selectedIdx = idx;
+      renderInterList(ds);
+      remplirFormulaire(idx);
+    };
+    list.appendChild(item);
+  });
+}
+
+// ---- FORMULAIRE ----
+function remplirFormulaire(idx) {
   const i = interventions[idx];
-  window._selectedIdx = idx;
-  openModal();
   document.getElementById('date-intervention').value = i.date || '';
   document.getElementById('debut').value = i.debut || '';
   document.getElementById('fin').value = i.fin || '';
@@ -714,61 +400,19 @@ function ouvrirEnEdition(idx) {
   document.getElementById('montant').value = i.montant || '';
 }
 
-function openModal() {
-  document.getElementById('modalTitle').textContent = 'Journal du ' + formatDateFR(selectedDate);
-  document.getElementById('modalOverlay').classList.add('visible');
-}
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('visible');
-  viderFormulaire();
-  window._selectedIdx = null;
-}
-document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-
 function viderFormulaire() {
-  ['date-intervention','debut','fin','client','adresse','numero','donneur','descriptif','montant']
-    .forEach(id => document.getElementById(id).value = '');
-  document.querySelectorAll('#journalBody tr').forEach(r => r.classList.remove('selected'));
-  window._selectedIdx = null;
+  selectedIdx = null;
+  ['debut','fin','client','adresse','numero','donneur','descriptif','montant'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('date-intervention').value = formatDateISO(selectedDate);
 }
 
-function updateJournal() {
-  const tbody = document.getElementById('journalBody');
-  tbody.innerHTML = '';
-  const iso = formatDateISO(selectedDate);
-  const list = interventions.filter(i => i.date === iso);
-  window._selectedIdx = null;
+function getDs() { return formatDateISO(selectedDate); }
 
-  list.forEach(i => {
-    const realIdx = interventions.findIndex(x => x === i);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i.debut||''}</td><td>${i.fin||''}</td><td>${i.client||''}</td>
-      <td>${i.donneur||''}</td><td>${i.adresse||''}</td><td>${i.numero||''}</td>
-      <td>${i.descriptif||''}</td><td>${i.montant||''}€</td>`;
-    tr.onclick = () => {
-      document.querySelectorAll('#journalBody tr').forEach(r => r.classList.remove('selected'));
-      tr.classList.add('selected');
-      window._selectedIdx = realIdx;
-      document.getElementById('date-intervention').value = i.date||'';
-      document.getElementById('debut').value = i.debut||'';
-      document.getElementById('fin').value = i.fin||'';
-      document.getElementById('client').value = i.client||'';
-      document.getElementById('adresse').value = i.adresse||'';
-      document.getElementById('numero').value = i.numero||'';
-      document.getElementById('donneur').value = i.donneur||'';
-      document.getElementById('descriptif').value = i.descriptif||'';
-      document.getElementById('montant').value = i.montant||'';
-    };
-    tbody.appendChild(tr);
-  });
-}
-
+// ---- ACTIONS ----
 function ajouterIntervention() {
-  const dateVal = document.getElementById('date-intervention').value || formatDateISO(selectedDate);
   const i = {
     id: Date.now().toString(),
-    date: dateVal,
+    date: document.getElementById('date-intervention').value || getDs(),
     debut: document.getElementById('debut').value,
     fin: document.getElementById('fin').value,
     client: document.getElementById('client').value,
@@ -780,18 +424,16 @@ function ajouterIntervention() {
   };
   interventions.push(i);
   sauvegarderJournalDansDrive();
-  viderFormulaire();
-  updateJournal();
   renderCalendar();
   closeModal();
 }
 
 function modifierSelectionne() {
-  if (window._selectedIdx === null || window._selectedIdx === undefined) { alert('Clique d\'abord sur une intervention dans le calendrier.'); return; }
-  const idx = window._selectedIdx;
-  interventions[idx] = {
-    ...interventions[idx],
-    date: document.getElementById('date-intervention').value || interventions[idx].date,
+  if (selectedIdx === null) { alert('Sélectionne une intervention dans la liste.'); return; }
+  const ds = getDs();
+  interventions[selectedIdx] = {
+    ...interventions[selectedIdx],
+    date: document.getElementById('date-intervention').value || interventions[selectedIdx].date,
     debut: document.getElementById('debut').value,
     fin: document.getElementById('fin').value,
     client: document.getElementById('client').value,
@@ -802,25 +444,25 @@ function modifierSelectionne() {
     montant: document.getElementById('montant').value
   };
   sauvegarderJournalDansDrive();
-  viderFormulaire();
   renderCalendar();
-  closeModal();
+  renderInterList(ds);
 }
 
 function supprimerSelectionne() {
-  if (window._selectedIdx === null || window._selectedIdx === undefined) { alert('Clique d\'abord sur une intervention dans le calendrier.'); return; }
+  if (selectedIdx === null) { alert('Sélectionne une intervention dans la liste.'); return; }
   if (!confirm('Supprimer cette intervention ?')) return;
-  interventions.splice(window._selectedIdx, 1);
+  const ds = getDs();
+  interventions.splice(selectedIdx, 1);
+  selectedIdx = null;
   sauvegarderJournalDansDrive();
-  viderFormulaire();
   renderCalendar();
-  closeModal();
+  viderFormulaire();
+  renderInterList(ds);
 }
 
+// ---- EXPORT CSV ----
 function exportCSVMois() {
-  const year = currentDate.getFullYear();
-  const month = String(currentDate.getMonth()+1).padStart(2,'0');
-  const prefix = year + '-' + month;
+  const prefix = currentDate.getFullYear() + '-' + String(currentDate.getMonth()+1).padStart(2,'0');
   const liste = interventions.filter(i => i.date && i.date.startsWith(prefix));
   if (liste.length === 0) { alert('Aucune intervention ce mois-ci.'); return; }
   let csv = "Date;Début;Fin;Client;Adresse;N° intervention;Donneur d'ordre;Descriptif;Montant\n";
