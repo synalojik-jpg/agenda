@@ -18,6 +18,7 @@
   --bleu:#1a3ed4;--bleu-fonce:#0f2490;--rouge:#d41a1a;--rouge-clair:#ff2a2a;
   --noir:#0a0a14;--surface:#fff;--bg:#f0f2f8;--border:#dde2f0;
   --text:#1a1a2e;--muted:#6b7280;--radius:10px;--shadow:0 2px 12px rgba(26,62,212,.10);
+  --row-h:40px;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
@@ -72,7 +73,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .ev-chip{display:block;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:15px;line-height:15px;max-width:100%;}
 .ev-plus{font-size:.6rem;color:var(--bleu);font-weight:600;padding-left:2px;white-space:nowrap;}
 
-/* VUE GRILLE HORAIRE */
+/* GRILLE HORAIRE */
 .grid-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;overflow-x:auto;}
 .time-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:320px;}
 .tg-header{display:grid;border-bottom:2px solid var(--border);}
@@ -80,19 +81,18 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .tg-hcell.timecol{background:#f8f9ff;color:var(--muted);font-size:.7rem;border-right:1px solid var(--border);}
 .tg-hcell.today-col{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));}
 
-/* Lignes horaires */
-.tg-slot{display:grid;position:relative;}
-.tg-slot.pleine{border-bottom:1px solid var(--border);min-height:30px;}
-.tg-slot.demie{border-bottom:1px dashed #eee;min-height:30px;}
-.time-label{font-size:.68rem;color:var(--muted);background:#f8f9ff;border-right:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end;padding:0 6px;padding-top:0;position:relative;top:-8px;}
-.tg-cell{border-right:1px solid var(--border);cursor:pointer;transition:background .1s;padding:1px;position:relative;min-height:30px;}
+/* Lignes : 1 ligne = 1 heure, séparateur demi-heure en pointillé */
+.tg-row{display:grid;border-bottom:1px solid var(--border);height:var(--row-h);}
+.tg-row-half{display:grid;border-bottom:1px dashed #e5e7f0;height:var(--row-h);}
+.time-label{font-size:.68rem;color:var(--muted);background:#f8f9ff;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;padding:0 6px;}
+.tg-cell{border-right:1px solid var(--border);cursor:pointer;transition:background .1s;padding:1px;position:relative;overflow:hidden;}
 .tg-cell:last-child{border-right:none;}
 .tg-cell:hover{background:#f0f4ff;}
 .tg-cell.today-cell{background:#fafbff;}
-.tg-ev{font-size:.7rem;font-weight:600;padding:2px 5px;border-radius:3px;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;margin-bottom:1px;}
+.tg-ev{font-size:.7rem;font-weight:600;padding:2px 5px;border-radius:3px;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;margin-bottom:1px;position:relative;z-index:1;}
 .tg-ev:hover{opacity:.85;}
 
-/* MODAL LISTE JOUR */
+/* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:16px 10px;overflow-y:auto;}
 .overlay.visible{display:flex;}
 .modal{background:var(--surface);border-radius:14px;width:100%;max-width:520px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden;animation:slideDown .2s ease;margin:auto;}
@@ -102,7 +102,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;}
 .modal-body{padding:16px;}
 
-/* Liste interventions du jour */
+/* Liste */
 .day-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .day-item{background:#f5f7ff;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:all .15s;}
 .day-item:hover{border-color:var(--bleu);background:#eef1ff;}
@@ -116,7 +116,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .form-field{margin-bottom:8px;}
 .form-field label{display:block;font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
 .form-field input,.form-field textarea{width:100%;padding:9px 12px;font-size:.88rem;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:7px;color:var(--text);background:#fff;outline:none;-webkit-appearance:none;opacity:1;text-transform:uppercase;}
-.form-field input[type="date"],.form-field input[type="time"],.form-field input[type="number"]{text-transform:none;}
+.form-field input[type="date"],.form-field input[type="number"]{text-transform:none;}
+.form-field input[type="time"]{text-transform:none;}
 .form-field input:focus,.form-field textarea:focus{border-color:var(--bleu);}
 .form-field textarea{resize:vertical;min-height:55px;text-transform:uppercase;}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -124,7 +125,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .btn-ajouter{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 .btn-modifier{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 .btn-supprimer{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
-.btn-retour{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:7px;cursor:pointer;font-size:.82rem;margin-bottom:12px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.btn-retour{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:7px;cursor:pointer;font-size:.8rem;margin-bottom:10px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 
 @media(max-width:600px){
   .htitle span:first-child{font-size:1rem;}
@@ -132,8 +133,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
   #statut span:not(.dot){display:none;}
   .form-row-2{grid-template-columns:1fr;}
   .btn-row{grid-template-columns:1fr;}
-  #titre-periode{font-size:1rem;min-width:100px;}
-  .view-btn{padding:5px 8px;font-size:.72rem;}
+  #titre-periode{font-size:.95rem;min-width:80px;}
+  .view-btn{padding:5px 7px;font-size:.72rem;}
 }
 </style>
 </head>
@@ -175,7 +176,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 
 <div id="vue-container"></div>
 
-<!-- MODAL LISTE DU JOUR -->
+<!-- MODAL LISTE -->
 <div class="overlay" id="overlayListe">
   <div class="modal">
     <div class="modal-header">
@@ -184,7 +185,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
     </div>
     <div class="modal-body">
       <div class="day-list" id="dayList"></div>
-      <button class="btn-nouvelle" onclick="ouvrirFormulaire(null)">+ Nouvelle intervention</button>
+      <button class="btn-nouvelle" onclick="ouvrirFormulaire(null,jourEnCours,null,false)">+ Nouvelle intervention</button>
     </div>
   </div>
 </div>
@@ -200,10 +201,10 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
       <button class="btn-retour" id="btn-retour" onclick="retourListe()" style="display:none;">← Retour</button>
       <div class="form-row-2">
         <div class="form-field"><label>Date</label><input type="date" id="f-date"></div>
-        <div class="form-field"><label>Heure début</label><input type="time" id="f-debut"></div>
+        <div class="form-field"><label>Heure début</label><input type="time" id="f-debut" step="1800"></div>
       </div>
       <div class="form-row-2">
-        <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin"></div>
+        <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin" step="1800"></div>
         <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
       </div>
       <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
@@ -296,7 +297,8 @@ async function sauvegarder(){
 // ---- UTILS ----
 function fmtISO(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 function fmtFR(date){return date.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
-function fmtDemiHeure(h,half){return String(h).padStart(2,'0')+':'+(half?'30':'00');}
+function fmtH(h){return String(h).padStart(2,'0')+':00';}
+function fmtH30(h){return String(h).padStart(2,'0')+':30';}
 function lundi(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return d;}
 
 // ---- NAVIGATION ----
@@ -322,12 +324,7 @@ document.addEventListener('touchend',e=>{
 },{passive:true});
 
 // ---- RENDER ----
-function render(){
-  updateStats();
-  if(vue==='mois')renderMois();
-  else if(vue==='semaine')renderSemaine();
-  else renderJour();
-}
+function render(){updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
 
 // ---- VUE MOIS ----
 function renderMois(){
@@ -345,7 +342,8 @@ function renderMois(){
     const ds=fmtISO(date);
     const isThisMonth=date.getMonth()===month;
     const isToday=ds===todayISO;
-    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="clicJourMois(\''+ds+'\')">';
+    // Clic → vue jour de ce jour
+    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="allerJour(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
     evs.slice(0,2).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
@@ -356,18 +354,51 @@ function renderMois(){
   document.getElementById('vue-container').innerHTML=html;
 }
 
-// Clic sur un jour en vue mois
-function clicJourMois(ds){
+// Clic jour en vue mois → bascule vue jour
+function allerJour(ds){
   currentDate=new Date(ds+'T12:00:00');
-  jourEnCours=ds;
-  const evs=interventions.filter(e=>e.date===ds);
-  if(evs.length===0){
-    // Pas d'intervention → formulaire direct
-    ouvrirFormulaire(null,ds,null,false);
-  } else {
-    // Plusieurs interventions → liste
-    ouvrirListe(ds);
+  changerVue('jour');
+}
+
+// ---- GRILLE HORAIRE (semaine & jour) ----
+function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
+  const todayISO=fmtISO(new Date());
+  let html='<div class="grid-wrapper"><div class="time-grid">';
+  // Header
+  html+='<div class="tg-header" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
+  html+='<div class="tg-hcell timecol"></div>';
+  cols.forEach((c,i)=>{html+='<div class="tg-hcell '+getColClass(c,i)+'">'+getColHeader(c,i)+'</div>';});
+  html+='</div>';
+
+  // 24h — ligne pleine = heure, ligne pointillée = demi-heure
+  for(let h=0;h<24;h++){
+    // Ligne heure pleine
+    html+='<div class="tg-row" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
+    html+='<div class="time-label">'+fmtH(h)+'</div>';
+    cols.forEach((c,i)=>{
+      const ds=typeof c==='string'?c:fmtISO(c);
+      const evs=interventions.filter(e=>e.date===ds&&e.debut===fmtH(h));
+      const isToday=ds===todayISO;
+      html+='<div class="tg-cell'+(isToday?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+fmtH(h)+'\',false)">';
+      evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.client||'')+'</div>';});
+      html+='</div>';
+    });
+    html+='</div>';
+    // Ligne demi-heure
+    html+='<div class="tg-row-half" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
+    html+='<div class="time-label"></div>';
+    cols.forEach((c,i)=>{
+      const ds=typeof c==='string'?c:fmtISO(c);
+      const evs=interventions.filter(e=>e.date===ds&&e.debut===fmtH30(h));
+      const isToday=ds===todayISO;
+      html+='<div class="tg-cell'+(isToday?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+fmtH30(h)+'\',false)">';
+      evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.client||'')+'</div>';});
+      html+='</div>';
+    });
+    html+='</div>';
   }
+  html+='</div></div>';
+  return html;
 }
 
 // ---- VUE SEMAINE ----
@@ -379,35 +410,12 @@ function renderSemaine(){
   document.getElementById('titre-periode').textContent=
     jours[0].toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+
     jours[6].toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
-
-  let html='<div class="grid-wrapper"><div class="time-grid">';
-  // Header
-  html+='<div class="tg-header" style="display:grid;grid-template-columns:52px repeat(7,1fr);">';
-  html+='<div class="tg-hcell timecol"></div>';
-  jours.forEach(d=>{
-    const ds=fmtISO(d);const isToday=ds===todayISO;
-    html+='<div class="tg-hcell'+(isToday?' today-col':'')+'">'+JOURS[(d.getDay()+6)%7]+' '+d.getDate()+'</div>';
-  });
-  html+='</div>';
-
-  // Slots horaires
-  for(let h=7;h<=21;h++){
-    for(let half=0;half<2;half++){
-      if(h===21&&half===1)break;
-      const timeStr=fmtDemiHeure(h,half);
-      html+='<div class="tg-slot '+(half?'demie':'pleine')+'" style="display:grid;grid-template-columns:52px repeat(7,1fr);">';
-      html+='<div class="time-label">'+(half?'':timeStr)+'</div>';
-      jours.forEach(d=>{
-        const ds=fmtISO(d);const isToday=ds===todayISO;
-        const evs=interventions.filter(e=>e.date===ds&&e.debut===timeStr);
-        html+='<div class="tg-cell'+(isToday?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+timeStr+'\',false)">';
-        evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.client||'')+'</div>';});
-        html+='</div>';
-      });
-      html+='</div>';
-    }
-  }
-  html+='</div></div>';
+  const html=buildGrille(
+    jours,
+    (d)=>JOURS[(d.getDay()+6)%7]+' '+d.getDate(),
+    (d)=>fmtISO(d)===todayISO?'today-col':'',
+    7,'52px'
+  );
   document.getElementById('vue-container').innerHTML=html;
 }
 
@@ -416,24 +424,12 @@ function renderJour(){
   const ds=fmtISO(currentDate);
   const todayISO=fmtISO(new Date());
   document.getElementById('titre-periode').textContent=fmtFR(currentDate).replace(/^\w/,c=>c.toUpperCase());
-  let html='<div class="grid-wrapper"><div class="time-grid">';
-  html+='<div class="tg-header" style="display:grid;grid-template-columns:60px 1fr;">';
-  html+='<div class="tg-hcell timecol"></div>';
-  html+='<div class="tg-hcell'+(ds===todayISO?' today-col':'')+'">'+fmtFR(currentDate).replace(/^\w/,c=>c.toUpperCase())+'</div>';
-  html+='</div>';
-  for(let h=7;h<=21;h++){
-    for(let half=0;half<2;half++){
-      if(h===21&&half===1)break;
-      const timeStr=fmtDemiHeure(h,half);
-      const evs=interventions.filter(e=>e.date===ds&&e.debut===timeStr);
-      html+='<div class="tg-slot '+(half?'demie':'pleine')+'" style="display:grid;grid-template-columns:60px 1fr;">';
-      html+='<div class="time-label">'+(half?'':timeStr)+'</div>';
-      html+='<div class="tg-cell'+(ds===todayISO?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+timeStr+'\',false)">';
-      evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.debut||'')+' '+(ev.client||'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';});
-      html+='</div></div>';
-    }
-  }
-  html+='</div></div>';
+  const html=buildGrille(
+    [currentDate],
+    ()=>fmtFR(currentDate).replace(/^\w/,c=>c.toUpperCase()),
+    ()=>ds===todayISO?'today-col':'',
+    1,'60px'
+  );
   document.getElementById('vue-container').innerHTML=html;
 }
 
@@ -445,7 +441,7 @@ function updateStats(){
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
 }
 
-// ---- LISTE DU JOUR ----
+// ---- LISTE ----
 function ouvrirListe(ds){
   jourEnCours=ds;
   const date=new Date(ds+'T12:00:00');
@@ -457,9 +453,7 @@ function ouvrirListe(ds){
     html+='<div class="day-item-left">';
     html+='<div class="day-item-client">'+(ev.client||'—')+'</div>';
     html+='<div class="day-item-detail">'+(ev.debut||'')+( ev.fin?' → '+ev.fin:'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';
-    html+='</div>';
-    html+='<div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div>';
-    html+='</div>';
+    html+='</div><div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div></div>';
   });
   document.getElementById('dayList').innerHTML=html;
   document.getElementById('overlayListe').classList.add('visible');
@@ -491,59 +485,25 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
   fermerListe();
   document.getElementById('overlayForm').classList.add('visible');
 }
-
 function ouvrirEv(id){
   const idx=interventions.findIndex(i=>i.id===id);
   if(idx===-1)return;
   ouvrirFormulaire(idx,null,null,jourEnCours!==null);
 }
-
-function retourListe(){
-  fermerForm();
-  if(jourEnCours)ouvrirListe(jourEnCours);
-}
-function fermerForm(){
-  document.getElementById('overlayForm').classList.remove('visible');
-  editIdx=null;
-}
+function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
+function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
-
-function viderForm(){
-  ['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif'].forEach(id=>document.getElementById(id).value='');
-}
+function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif'].forEach(id=>document.getElementById(id).value='');}
 function getFormData(id){
-  return{
-    id:id||Date.now().toString(),
-    date:document.getElementById('f-date').value,
-    debut:document.getElementById('f-debut').value,
-    fin:document.getElementById('f-fin').value,
-    client:document.getElementById('f-client').value,
-    adresse:document.getElementById('f-adresse').value,
-    descriptif:document.getElementById('f-descriptif').value,
-    donneur:document.getElementById('f-donneur').value,
-    numero:document.getElementById('f-numero').value,
-    tarif:document.getElementById('f-tarif').value
-  };
+  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value};
 }
 
 // ---- ACTIONS ----
-function ajouterIntervention(){
-  interventions.push(getFormData(Date.now().toString()));
-  sauvegarder();render();fermerForm();jourEnCours=null;
-}
-function modifierIntervention(){
-  if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
-  interventions[editIdx]=getFormData(interventions[editIdx].id);
-  sauvegarder();render();fermerForm();jourEnCours=null;
-}
-function supprimerIntervention(){
-  if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
-  if(!confirm('Supprimer cette intervention ?'))return;
-  interventions.splice(editIdx,1);
-  editIdx=null;sauvegarder();render();fermerForm();jourEnCours=null;
-}
+function ajouterIntervention(){interventions.push(getFormData(Date.now().toString()));sauvegarder();render();fermerForm();jourEnCours=null;}
+function modifierIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}interventions[editIdx]=getFormData(interventions[editIdx].id);sauvegarder();render();fermerForm();jourEnCours=null;}
+function supprimerIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}if(!confirm('Supprimer cette intervention ?'))return;interventions.splice(editIdx,1);editIdx=null;sauvegarder();render();fermerForm();jourEnCours=null;}
 
-// ---- EXPORT CSV ----
+// ---- EXPORT ----
 function exportCSVMois(){
   const prefix=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix));
@@ -551,10 +511,7 @@ function exportCSVMois(){
   let csv="Date;Début;Fin;Client;Adresse;Descriptif;Donneur d'ordre;N° intervention;Tarif\n";
   liste.forEach(i=>{csv+=`${i.date};${i.debut||''};${i.fin||''};${i.client||''};${i.adresse||''};${i.descriptif||''};${i.donneur||''};${i.numero||''};${i.tarif||''}\n`;});
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download='synalojik_'+prefix+'.csv';
-  link.click();
+  const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='synalojik_'+prefix+'.csv';link.click();
 }
 
 render();
@@ -562,9 +519,7 @@ render();
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('/agenda/sw.js')
-      .then(reg=>console.log('SW:',reg.scope))
-      .catch(err=>console.log('SW err:',err));
+    navigator.serviceWorker.register('/agenda/sw.js').catch(e=>console.log(e));
   });
 }
 </script>
