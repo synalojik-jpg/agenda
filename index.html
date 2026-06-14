@@ -19,7 +19,7 @@
   --noir:#0a0a14;--surface:#fff;--bg:#f0f2f8;--border:#dde2f0;
   --text:#1a1a2e;--muted:#6b7280;--radius:10px;--shadow:0 2px 12px rgba(26,62,212,.10);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
 /* HEADER */
 header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 15px rgba(0,0,0,.4);position:sticky;top:0;z-index:100;}
@@ -36,17 +36,17 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 #btn-cx{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 
 /* TOOLBAR */
-.toolbar{max-width:1100px;margin:16px auto 0;padding:0 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-.nav-left{display:flex;align-items:center;gap:8px;}
+.toolbar{max-width:1100px;margin:12px auto 0;padding:0 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.nav-left{display:flex;align-items:center;gap:6px;}
 .btn-nav{background:var(--surface);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;}
 .btn-nav:hover{background:#eef1ff;}
 .btn-today{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500;}
 .btn-today:hover{background:#eef1ff;}
-#titre-periode{font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:1px;text-transform:uppercase;min-width:180px;}
+#titre-periode{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text);letter-spacing:1px;text-transform:uppercase;min-width:140px;}
 .view-btns{display:flex;gap:4px;}
-.view-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;transition:all .15s;}
+.view-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;transition:all .15s;}
 .view-btn.active{background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;border-color:var(--bleu);}
-#btn-export{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+#btn-export{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 
 /* STATS */
 .stats{max-width:1100px;margin:10px auto;padding:0 12px;display:flex;gap:10px;}
@@ -56,42 +56,43 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .stat-value{font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;color:var(--text);}
 
 /* VUE MOIS */
-.cal-wrapper{max-width:1100px;margin:10px auto 20px;padding:0 12px;}
+.cal-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;}
 .cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
 .cal-day-names{display:grid;grid-template-columns:repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
 .cal-body{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:80px;max-height:80px;overflow:hidden;padding:4px;cursor:pointer;position:relative;}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;max-height:75px;overflow:hidden;padding:3px;cursor:pointer;position:relative;}
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
 .cal-cell.autre-mois .num-jour{color:#ccc;}
 .cal-cell.today{background:linear-gradient(135deg,#eef1ff,#f5f0ff);border-left:3px solid var(--bleu);}
 .cal-cell.today .num-jour{background:linear-gradient(135deg,var(--bleu),var(--rouge));color:#fff;border-radius:50%;}
-.num-jour{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.ev-chip{display:block;font-size:.62rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;cursor:pointer;height:16px;line-height:16px;max-width:100%;}
-.ev-chip:hover{opacity:.8;}
+.num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ev-chip{display:block;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:15px;line-height:15px;max-width:100%;}
 .ev-plus{font-size:.6rem;color:var(--bleu);font-weight:600;padding-left:2px;white-space:nowrap;}
 
-/* VUE SEMAINE / JOUR */
-.grid-wrapper{max-width:1100px;margin:10px auto 20px;padding:0 12px;overflow-x:auto;}
-.time-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:grid;min-width:400px;}
+/* VUE GRILLE HORAIRE */
+.grid-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;overflow-x:auto;}
+.time-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:320px;}
 .tg-header{display:grid;border-bottom:2px solid var(--border);}
-.tg-header-cell{background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;text-align:center;padding:8px 4px;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
-.tg-header-cell.time-col{background:#f8f9ff;color:var(--muted);font-size:.7rem;}
-.tg-header-cell.today-col{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));}
-.tg-body{display:grid;}
-.tg-row{display:grid;border-bottom:1px solid var(--border);min-height:30px;}
-.tg-row.half{border-bottom:1px dashed #eee;min-height:30px;}
-.time-label{font-size:.68rem;color:var(--muted);padding:2px 6px;text-align:right;background:#f8f9ff;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;}
-.tg-cell{border-right:1px solid var(--border);cursor:pointer;position:relative;transition:background .1s;padding:1px;}
+.tg-hcell{background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;text-align:center;padding:8px 4px;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.tg-hcell.timecol{background:#f8f9ff;color:var(--muted);font-size:.7rem;border-right:1px solid var(--border);}
+.tg-hcell.today-col{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));}
+
+/* Lignes horaires */
+.tg-slot{display:grid;position:relative;}
+.tg-slot.pleine{border-bottom:1px solid var(--border);min-height:30px;}
+.tg-slot.demie{border-bottom:1px dashed #eee;min-height:30px;}
+.time-label{font-size:.68rem;color:var(--muted);background:#f8f9ff;border-right:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end;padding:0 6px;padding-top:0;position:relative;top:-8px;}
+.tg-cell{border-right:1px solid var(--border);cursor:pointer;transition:background .1s;padding:1px;position:relative;min-height:30px;}
 .tg-cell:last-child{border-right:none;}
 .tg-cell:hover{background:#f0f4ff;}
 .tg-cell.today-cell{background:#fafbff;}
-.tg-ev{font-size:.7rem;font-weight:600;padding:2px 4px;border-radius:3px;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:1px 0;display:block;}
+.tg-ev{font-size:.7rem;font-weight:600;padding:2px 5px;border-radius:3px;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;margin-bottom:1px;}
 .tg-ev:hover{opacity:.85;}
 
-/* MODAL */
+/* MODAL LISTE JOUR */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:16px 10px;overflow-y:auto;}
 .overlay.visible{display:flex;}
 .modal{background:var(--surface);border-radius:14px;width:100%;max-width:520px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden;animation:slideDown .2s ease;margin:auto;}
@@ -100,6 +101,18 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .modal-header h2{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:1px;text-transform:uppercase;}
 .modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;}
 .modal-body{padding:16px;}
+
+/* Liste interventions du jour */
+.day-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.day-item{background:#f5f7ff;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:all .15s;}
+.day-item:hover{border-color:var(--bleu);background:#eef1ff;}
+.day-item-left{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.day-item-client{font-weight:600;font-size:.9rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.day-item-detail{font-size:.75rem;color:var(--muted);}
+.day-item-tarif{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--bleu);white-space:nowrap;flex-shrink:0;}
+.btn-nouvelle{width:100%;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;border:none;padding:10px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+
+/* Formulaire */
 .form-field{margin-bottom:8px;}
 .form-field label{display:block;font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
 .form-field input,.form-field textarea{width:100%;padding:9px 12px;font-size:.88rem;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:7px;color:var(--text);background:#fff;outline:none;-webkit-appearance:none;opacity:1;text-transform:uppercase;}
@@ -111,6 +124,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .btn-ajouter{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 .btn-modifier{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 .btn-supprimer{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));color:#fff;border:none;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.btn-retour{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:7px;cursor:pointer;font-size:.82rem;margin-bottom:12px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 
 @media(max-width:600px){
   .htitle span:first-child{font-size:1rem;}
@@ -118,8 +132,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
   #statut span:not(.dot){display:none;}
   .form-row-2{grid-template-columns:1fr;}
   .btn-row{grid-template-columns:1fr;}
-  #titre-periode{font-size:1rem;min-width:120px;}
-  .view-btn{padding:6px 8px;font-size:.75rem;}
+  #titre-periode{font-size:1rem;min-width:100px;}
+  .view-btn{padding:5px 8px;font-size:.72rem;}
 }
 </style>
 </head>
@@ -151,7 +165,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
     <button class="view-btn" onclick="changerVue('semaine')" id="vbtn-semaine">Semaine</button>
     <button class="view-btn" onclick="changerVue('jour')" id="vbtn-jour">Jour</button>
   </div>
-  <button id="btn-export" onclick="exportCSVMois()">⬇ Export CSV</button>
+  <button id="btn-export" onclick="exportCSVMois()">⬇ CSV</button>
 </div>
 
 <div class="stats">
@@ -161,14 +175,29 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 
 <div id="vue-container"></div>
 
-<!-- MODAL -->
-<div class="overlay" id="modalOverlay">
+<!-- MODAL LISTE DU JOUR -->
+<div class="overlay" id="overlayListe">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modalTitle">Intervention</h2>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2 id="listeTitre">Interventions</h2>
+      <button class="modal-close" onclick="fermerListe()">✕</button>
     </div>
     <div class="modal-body">
+      <div class="day-list" id="dayList"></div>
+      <button class="btn-nouvelle" onclick="ouvrirFormulaire(null)">+ Nouvelle intervention</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FORMULAIRE -->
+<div class="overlay" id="overlayForm">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="formTitre">Intervention</h2>
+      <button class="modal-close" onclick="fermerForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <button class="btn-retour" id="btn-retour" onclick="retourListe()" style="display:none;">← Retour</button>
       <div class="form-row-2">
         <div class="form-field"><label>Date</label><input type="date" id="f-date"></div>
         <div class="form-field"><label>Heure début</label><input type="time" id="f-debut"></div>
@@ -198,7 +227,7 @@ const CLIENT_ID='857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleuserco
 const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
-let interventions=[],currentDate=new Date(),vue='mois',editIdx=null;
+let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 
@@ -267,7 +296,6 @@ async function sauvegarder(){
 // ---- UTILS ----
 function fmtISO(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 function fmtFR(date){return date.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
-function fmtHeure(h){return String(h).padStart(2,'0')+':00';}
 function fmtDemiHeure(h,half){return String(h).padStart(2,'0')+':'+(half?'30':'00');}
 function lundi(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return d;}
 
@@ -281,13 +309,19 @@ function naviguer(delta){
 function allerAujourdhui(){currentDate=new Date();render();}
 function changerVue(v){
   vue=v;
-  ['mois','semaine','jour'].forEach(x=>{
-    document.getElementById('vbtn-'+x).classList.toggle('active',x===v);
-  });
+  ['mois','semaine','jour'].forEach(x=>document.getElementById('vbtn-'+x).classList.toggle('active',x===v));
   render();
 }
 
-// ---- RENDER PRINCIPAL ----
+// ---- SWIPE ----
+let swipeStartX=0;
+document.addEventListener('touchstart',e=>{swipeStartX=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const diff=swipeStartX-e.changedTouches[0].clientX;
+  if(Math.abs(diff)>60){naviguer(diff>0?1:-1);}
+},{passive:true});
+
+// ---- RENDER ----
 function render(){
   updateStats();
   if(vue==='mois')renderMois();
@@ -303,27 +337,37 @@ function renderMois(){
   const daysInMonth=new Date(year,month+1,0).getDate();
   const total=Math.ceil((startDay+daysInMonth)/7)*7;
   const todayISO=fmtISO(new Date());
-
-  let html=`<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names">`;
-  JOURS.forEach(j=>{html+=`<div>${j}</div>`;});
-  html+=`</div><div class="cal-body">`;
-
+  let html='<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names">';
+  JOURS.forEach(j=>{html+='<div>'+j+'</div>';});
+  html+='</div><div class="cal-body">';
   for(let i=0;i<total;i++){
     const date=new Date(year,month,1+i-startDay);
     const ds=fmtISO(date);
     const isThisMonth=date.getMonth()===month;
     const isToday=ds===todayISO;
-    html+=`<div class="cal-cell${!isThisMonth?' autre-mois':''}${isToday?' today':''}" onclick="ouvrirJour('${ds}')">`;
-    html+=`<div class="num-jour">${date.getDate()}</div>`;
+    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="clicJourMois(\''+ds+'\')">';
+    html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.slice(0,2).forEach(ev=>{
-      html+=`<div class="ev-chip" title="${ev.client||''}" onclick="event.stopPropagation();ouvrirEv('${ev.id}')">${ev.debut?ev.debut+' ':''}${ev.client||''}</div>`;
-    });
-    if(evs.length>2)html+=`<div class="ev-plus">+${evs.length-2}</div>`;
-    html+=`</div>`;
+    evs.slice(0,2).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
+    html+='</div>';
   }
-  html+=`</div></div></div>`;
+  html+='</div></div></div>';
   document.getElementById('vue-container').innerHTML=html;
+}
+
+// Clic sur un jour en vue mois
+function clicJourMois(ds){
+  currentDate=new Date(ds+'T12:00:00');
+  jourEnCours=ds;
+  const evs=interventions.filter(e=>e.date===ds);
+  if(evs.length===0){
+    // Pas d'intervention → formulaire direct
+    ouvrirFormulaire(null,ds,null,false);
+  } else {
+    // Plusieurs interventions → liste
+    ouvrirListe(ds);
+  }
 }
 
 // ---- VUE SEMAINE ----
@@ -332,46 +376,38 @@ function renderSemaine(){
   const jours=[];
   for(let i=0;i<7;i++){const d=new Date(lun);d.setDate(lun.getDate()+i);jours.push(d);}
   const todayISO=fmtISO(new Date());
-  const finSemaine=new Date(jours[6]);
   document.getElementById('titre-periode').textContent=
     jours[0].toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+
     jours[6].toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
 
-  const cols=8; // 1 col heure + 7 jours
-  let html=`<div class="grid-wrapper"><div class="time-grid" style="grid-template-rows:auto;">`;
-
+  let html='<div class="grid-wrapper"><div class="time-grid">';
   // Header
-  html+=`<div class="tg-header" style="grid-template-columns:50px repeat(7,1fr);">`;
-  html+=`<div class="tg-header-cell time-col"></div>`;
+  html+='<div class="tg-header" style="display:grid;grid-template-columns:52px repeat(7,1fr);">';
+  html+='<div class="tg-hcell timecol"></div>';
   jours.forEach(d=>{
-    const ds=fmtISO(d);
-    const isToday=ds===todayISO;
-    html+=`<div class="tg-header-cell${isToday?' today-col':''}">${JOURS[(d.getDay()+6)%7]} ${d.getDate()}</div>`;
+    const ds=fmtISO(d);const isToday=ds===todayISO;
+    html+='<div class="tg-hcell'+(isToday?' today-col':'')+'">'+JOURS[(d.getDay()+6)%7]+' '+d.getDate()+'</div>';
   });
-  html+=`</div>`;
+  html+='</div>';
 
-  // Body - 7h à 21h par 30 min
-  html+=`<div class="tg-body">`;
+  // Slots horaires
   for(let h=7;h<=21;h++){
     for(let half=0;half<2;half++){
       if(h===21&&half===1)break;
       const timeStr=fmtDemiHeure(h,half);
-      html+=`<div class="tg-row${half?' half':''}" style="display:grid;grid-template-columns:50px repeat(7,1fr);">`;
-      html+=`<div class="time-label">${half?'':timeStr}</div>`;
+      html+='<div class="tg-slot '+(half?'demie':'pleine')+'" style="display:grid;grid-template-columns:52px repeat(7,1fr);">';
+      html+='<div class="time-label">'+(half?'':timeStr)+'</div>';
       jours.forEach(d=>{
-        const ds=fmtISO(d);
-        const isToday=ds===todayISO;
+        const ds=fmtISO(d);const isToday=ds===todayISO;
         const evs=interventions.filter(e=>e.date===ds&&e.debut===timeStr);
-        html+=`<div class="tg-cell${isToday?' today-cell':''}" onclick="ouvrirCellule('${ds}','${timeStr}')">`;
-        evs.forEach(ev=>{
-          html+=`<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv('${ev.id}')" title="${ev.client||''}">${ev.client||''}</div>`;
-        });
-        html+=`</div>`;
+        html+='<div class="tg-cell'+(isToday?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+timeStr+'\',false)">';
+        evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.client||'')+'</div>';});
+        html+='</div>';
       });
-      html+=`</div>`;
+      html+='</div>';
     }
   }
-  html+=`</div></div></div>`;
+  html+='</div></div>';
   document.getElementById('vue-container').innerHTML=html;
 }
 
@@ -380,28 +416,24 @@ function renderJour(){
   const ds=fmtISO(currentDate);
   const todayISO=fmtISO(new Date());
   document.getElementById('titre-periode').textContent=fmtFR(currentDate).replace(/^\w/,c=>c.toUpperCase());
-
-  let html=`<div class="grid-wrapper"><div class="time-grid" style="grid-template-rows:auto;">`;
-  html+=`<div class="tg-header" style="grid-template-columns:60px 1fr;">`;
-  html+=`<div class="tg-header-cell time-col"></div>`;
-  html+=`<div class="tg-header-cell${ds===todayISO?' today-col':''}">${fmtFR(currentDate)}</div>`;
-  html+=`</div><div class="tg-body">`;
-
+  let html='<div class="grid-wrapper"><div class="time-grid">';
+  html+='<div class="tg-header" style="display:grid;grid-template-columns:60px 1fr;">';
+  html+='<div class="tg-hcell timecol"></div>';
+  html+='<div class="tg-hcell'+(ds===todayISO?' today-col':'')+'">'+fmtFR(currentDate).replace(/^\w/,c=>c.toUpperCase())+'</div>';
+  html+='</div>';
   for(let h=7;h<=21;h++){
     for(let half=0;half<2;half++){
       if(h===21&&half===1)break;
       const timeStr=fmtDemiHeure(h,half);
       const evs=interventions.filter(e=>e.date===ds&&e.debut===timeStr);
-      html+=`<div class="tg-row${half?' half':''}" style="display:grid;grid-template-columns:60px 1fr;">`;
-      html+=`<div class="time-label">${half?'':timeStr}</div>`;
-      html+=`<div class="tg-cell${ds===todayISO?' today-cell':''}" onclick="ouvrirCellule('${ds}','${timeStr}')">`;
-      evs.forEach(ev=>{
-        html+=`<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv('${ev.id}')" title="${ev.client||''}">${ev.debut||''} ${ev.client||''} ${ev.adresse?'· '+ev.adresse:''}</div>`;
-      });
-      html+=`</div></div>`;
+      html+='<div class="tg-slot '+(half?'demie':'pleine')+'" style="display:grid;grid-template-columns:60px 1fr;">';
+      html+='<div class="time-label">'+(half?'':timeStr)+'</div>';
+      html+='<div class="tg-cell'+(ds===todayISO?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+timeStr+'\',false)">';
+      evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.debut||'')+' '+(ev.client||'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';});
+      html+='</div></div>';
     }
   }
-  html+=`</div></div></div>`;
+  html+='</div></div>';
   document.getElementById('vue-container').innerHTML=html;
 }
 
@@ -413,51 +445,75 @@ function updateStats(){
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
 }
 
-// ---- MODAL ----
-function ouvrirJour(ds){
-  editIdx=null;
-  document.getElementById('modalTitle').textContent='Nouvelle intervention';
-  viderForm();
-  document.getElementById('f-date').value=ds;
-  document.getElementById('modalOverlay').classList.add('visible');
+// ---- LISTE DU JOUR ----
+function ouvrirListe(ds){
+  jourEnCours=ds;
+  const date=new Date(ds+'T12:00:00');
+  document.getElementById('listeTitre').textContent=date.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  const evs=interventions.filter(e=>e.date===ds);
+  let html='';
+  evs.forEach(ev=>{
+    html+='<div class="day-item" onclick="ouvrirEv(\''+ev.id+'\')">';
+    html+='<div class="day-item-left">';
+    html+='<div class="day-item-client">'+(ev.client||'—')+'</div>';
+    html+='<div class="day-item-detail">'+(ev.debut||'')+( ev.fin?' → '+ev.fin:'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';
+    html+='</div>';
+    html+='<div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div>';
+    html+='</div>';
+  });
+  document.getElementById('dayList').innerHTML=html;
+  document.getElementById('overlayListe').classList.add('visible');
 }
-function ouvrirCellule(ds,heure){
-  editIdx=null;
-  document.getElementById('modalTitle').textContent='Nouvelle intervention';
+function fermerListe(){document.getElementById('overlayListe').classList.remove('visible');}
+document.getElementById('overlayListe').addEventListener('click',function(e){if(e.target===this)fermerListe();});
+
+// ---- FORMULAIRE ----
+function ouvrirFormulaire(idx,ds,heure,avecRetour){
+  editIdx=idx!==null?idx:null;
+  document.getElementById('formTitre').textContent=idx!==null?'Modifier intervention':'Nouvelle intervention';
+  document.getElementById('btn-retour').style.display=avecRetour?'block':'none';
   viderForm();
-  document.getElementById('f-date').value=ds;
-  document.getElementById('f-debut').value=heure;
-  document.getElementById('modalOverlay').classList.add('visible');
+  if(idx!==null){
+    const i=interventions[idx];
+    document.getElementById('f-date').value=i.date||'';
+    document.getElementById('f-debut').value=i.debut||'';
+    document.getElementById('f-fin').value=i.fin||'';
+    document.getElementById('f-client').value=i.client||'';
+    document.getElementById('f-adresse').value=i.adresse||'';
+    document.getElementById('f-descriptif').value=i.descriptif||'';
+    document.getElementById('f-donneur').value=i.donneur||'';
+    document.getElementById('f-numero').value=i.numero||'';
+    document.getElementById('f-tarif').value=i.tarif||'';
+  } else {
+    if(ds)document.getElementById('f-date').value=ds;
+    if(heure)document.getElementById('f-debut').value=heure;
+  }
+  fermerListe();
+  document.getElementById('overlayForm').classList.add('visible');
 }
+
 function ouvrirEv(id){
   const idx=interventions.findIndex(i=>i.id===id);
   if(idx===-1)return;
-  editIdx=idx;
-  const i=interventions[idx];
-  document.getElementById('modalTitle').textContent='Modifier intervention';
-  document.getElementById('f-date').value=i.date||'';
-  document.getElementById('f-debut').value=i.debut||'';
-  document.getElementById('f-fin').value=i.fin||'';
-  document.getElementById('f-client').value=i.client||'';
-  document.getElementById('f-adresse').value=i.adresse||'';
-  document.getElementById('f-descriptif').value=i.descriptif||'';
-  document.getElementById('f-donneur').value=i.donneur||'';
-  document.getElementById('f-numero').value=i.numero||'';
-  document.getElementById('f-tarif').value=i.tarif||'';
-  document.getElementById('modalOverlay').classList.add('visible');
+  ouvrirFormulaire(idx,null,null,jourEnCours!==null);
 }
-function closeModal(){
-  document.getElementById('modalOverlay').classList.remove('visible');
+
+function retourListe(){
+  fermerForm();
+  if(jourEnCours)ouvrirListe(jourEnCours);
+}
+function fermerForm(){
+  document.getElementById('overlayForm').classList.remove('visible');
   editIdx=null;
 }
-document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
 
 function viderForm(){
   ['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif'].forEach(id=>document.getElementById(id).value='');
 }
-function getFormData(){
+function getFormData(id){
   return{
-    id:editIdx!==null?interventions[editIdx].id:Date.now().toString(),
+    id:id||Date.now().toString(),
     date:document.getElementById('f-date').value,
     debut:document.getElementById('f-debut').value,
     fin:document.getElementById('f-fin').value,
@@ -472,19 +528,19 @@ function getFormData(){
 
 // ---- ACTIONS ----
 function ajouterIntervention(){
-  interventions.push({...getFormData(),id:Date.now().toString()});
-  sauvegarder();render();closeModal();
+  interventions.push(getFormData(Date.now().toString()));
+  sauvegarder();render();fermerForm();jourEnCours=null;
 }
 function modifierIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
-  interventions[editIdx]=getFormData();
-  sauvegarder();render();closeModal();
+  interventions[editIdx]=getFormData(interventions[editIdx].id);
+  sauvegarder();render();fermerForm();jourEnCours=null;
 }
 function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
   interventions.splice(editIdx,1);
-  editIdx=null;sauvegarder();render();closeModal();
+  editIdx=null;sauvegarder();render();fermerForm();jourEnCours=null;
 }
 
 // ---- EXPORT CSV ----
