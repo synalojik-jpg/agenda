@@ -234,13 +234,13 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
       </div>
       <div class="form-row-2">
         <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin" step="1800"></div>
-        <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
+        <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
       </div>
-      <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
-      <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
+      <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></textarea></div>
       <div class="form-row-2">
-        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" placeholder="Donneur d'ordre"></div>
-        <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
+        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" placeholder="Donneur d'ordre" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
       <div class="btn-row">
@@ -262,26 +262,7 @@ const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 
 // ---- AUTH ----
-window.addEventListener('load',()=>{
-  const local=localStorage.getItem('synalojik_v2');
-  if(local){interventions=JSON.parse(local);render();}
-  gapi.load('client',async()=>{
-    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
-    tokenClient=google.accounts.oauth2.initTokenClient({
-      client_id:CLIENT_ID,scope:SCOPES,
-      callback:async(resp)=>{
-        if(resp.error)return;
-        accessToken=resp.access_token;
-        const s=document.getElementById('statut');
-        s.className='ok';s.innerHTML='<span class="dot"></span><span>Connecté</span>';
-        document.getElementById('btn-cx').textContent='Déconnexion';
-        document.getElementById('btn-cx').onclick=deconnecter;
-        await chargerDrive();render();
-      }
-    });
-    tokenClient.requestAccessToken({prompt:''});
-  });
-});
+window.addEventListener('load',()=>{\n  const local=localStorage.getItem('synalojik_v2');\n  if(local){interventions=JSON.parse(local);render();}\n  gapi.load('client',async()=>{\n    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});\n    tokenClient=google.accounts.oauth2.initTokenClient({\n      client_id:CLIENT_ID,scope:SCOPES,\n      callback:async(resp)=>{\n        if(resp.error){console.warn('Token error',resp.error);return;}\n        accessToken=resp.access_token;\n        const s=document.getElementById('statut');\n        s.className='ok';s.innerHTML='<span class="dot"></span><span>Connecté</span>';\n        document.getElementById('btn-cx').textContent='Déconnexion';\n        document.getElementById('btn-cx').onclick=deconnecter;\n        await chargerDrive();render();\n      }\n    });\n    // Timeout : si Drive ne répond pas en 5s, on affiche quand même le localStorage\n    const timeout=setTimeout(()=>{\n      if(!accessToken){console.warn('Auth timeout, fallback local');render();}\n    },5000);\n    tokenClient.requestAccessToken({prompt:''});\n  });\n});
 function demanderConnexion(){tokenClient.requestAccessToken({prompt:'consent'});}
 function deconnecter(){
   google.accounts.oauth2.revoke(accessToken,()=>{
