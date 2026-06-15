@@ -262,7 +262,27 @@ const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 
 // ---- AUTH ----
-window.addEventListener('load',()=>{\n  const local=localStorage.getItem('synalojik_v2');\n  if(local){interventions=JSON.parse(local);render();}\n  gapi.load('client',async()=>{\n    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});\n    tokenClient=google.accounts.oauth2.initTokenClient({\n      client_id:CLIENT_ID,scope:SCOPES,\n      callback:async(resp)=>{\n        if(resp.error){console.warn('Token error',resp.error);return;}\n        accessToken=resp.access_token;\n        const s=document.getElementById('statut');\n        s.className='ok';s.innerHTML='<span class="dot"></span><span>Connecté</span>';\n        document.getElementById('btn-cx').textContent='Déconnexion';\n        document.getElementById('btn-cx').onclick=deconnecter;\n        await chargerDrive();render();\n      }\n    });\n    // Timeout : si Drive ne répond pas en 5s, on affiche quand même le localStorage\n    const timeout=setTimeout(()=>{\n      if(!accessToken){console.warn('Auth timeout, fallback local');render();}\n    },5000);\n    tokenClient.requestAccessToken({prompt:''});\n  });\n});
+window.addEventListener('load',()=>{
+  const local=localStorage.getItem('synalojik_v2');
+  if(local){interventions=JSON.parse(local);render();}
+  gapi.load('client',async()=>{
+    await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:CLIENT_ID,scope:SCOPES,
+      callback:async(resp)=>{
+        if(resp.error){console.warn('Token error',resp.error);return;}
+        accessToken=resp.access_token;
+        const s=document.getElementById('statut');
+        s.className='ok';s.innerHTML='<span class="dot"></span><span>Connecté</span>';
+        document.getElementById('btn-cx').textContent='Déconnexion';
+        document.getElementById('btn-cx').onclick=deconnecter;
+        await chargerDrive();render();
+      }
+    });
+    setTimeout(()=>{if(!accessToken)render();},5000);
+    tokenClient.requestAccessToken({prompt:''});
+  });
+});
 function demanderConnexion(){tokenClient.requestAccessToken({prompt:'consent'});}
 function deconnecter(){
   google.accounts.oauth2.revoke(accessToken,()=>{
