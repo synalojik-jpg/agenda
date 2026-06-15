@@ -18,7 +18,7 @@
   --bleu:#1a3ed4;--bleu-fonce:#0f2490;--rouge:#d41a1a;--rouge-clair:#ff2a2a;
   --noir:#0a0a14;--surface:#fff;--bg:#f0f2f8;--border:#dde2f0;
   --text:#1a1a2e;--muted:#6b7280;--radius:10px;--shadow:0 2px 12px rgba(26,62,212,.10);
-  --row-h:40px;
+  --row-h:80px;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
@@ -81,15 +81,44 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .tg-hcell.timecol{background:#f8f9ff;color:var(--muted);font-size:.7rem;border-right:1px solid var(--border);}
 .tg-hcell.today-col{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));}
 
-/* Lignes : 1 ligne = 1 heure, séparateur demi-heure en pointillé */
-.tg-row{display:grid;border-bottom:1px solid var(--border);height:var(--row-h);}
-.tg-row-half{display:grid;border-bottom:1px dashed #e5e7f0;height:var(--row-h);}
-.time-label{font-size:.68rem;color:var(--muted);background:#f8f9ff;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;padding:0 6px;}
-.tg-cell{border-right:1px solid var(--border);cursor:pointer;transition:background .1s;padding:1px;position:relative;overflow:hidden;}
+/* Lignes : 1 ligne = 1 heure (80px), trait demi-heure en pointillé via pseudo-élément */
+.tg-row{display:grid;border-bottom:1px solid var(--border);height:var(--row-h);position:relative;}
+/* Label heure : centré verticalement sur le trait supérieur (transform -50%) */
+.time-label{
+  font-size:.68rem;color:var(--muted);background:#f8f9ff;
+  border-right:1px solid var(--border);
+  position:relative;
+}
+.time-label span{
+  position:absolute;
+  top:0;right:6px;
+  transform:translateY(-50%);
+  line-height:1;
+  white-space:nowrap;
+}
+/* Trait demi-heure en pointillé au milieu de chaque ligne */
+.tg-row::after{
+  content:'';
+  position:absolute;
+  left:0;right:0;
+  top:50%;
+  border-top:1px dashed #e5e7f0;
+  pointer-events:none;
+}
+/* Colonnes jours : position relative pour y placer les événements en absolu */
+.tg-col-body{position:relative;}
+.tg-cell{border-right:1px solid var(--border);cursor:pointer;transition:background .1s;position:relative;}
 .tg-cell:last-child{border-right:none;}
 .tg-cell:hover{background:#f0f4ff;}
 .tg-cell.today-cell{background:#fafbff;}
-.tg-ev{font-size:.7rem;font-weight:600;padding:2px 5px;border-radius:3px;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;margin-bottom:1px;position:relative;z-index:1;}
+/* Événement en position absolue, hauteur calculée selon durée */
+.tg-ev{
+  font-size:.7rem;font-weight:600;padding:2px 5px;border-radius:3px;
+  background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;
+  cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  position:absolute;left:1px;right:1px;
+  z-index:2;box-sizing:border-box;
+}
 .tg-ev:hover{opacity:.85;}
 
 /* MODAL */
@@ -361,42 +390,73 @@ function allerJour(ds){
 }
 
 // ---- GRILLE HORAIRE (semaine & jour) ----
+// Convertit "HH:MM" en minutes depuis minuit
+function toMin(hhmm){
+  if(!hhmm)return null;
+  const p=hhmm.split(':');
+  return parseInt(p[0],10)*60+(parseInt(p[1],10)||0);
+}
+
 function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
+  const ROW_H=80; // px par heure — doit correspondre à --row-h
   const todayISO=fmtISO(new Date());
   let html='<div class="grid-wrapper"><div class="time-grid">';
-  // Header
+
+  // ---- Header ----
   html+='<div class="tg-header" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
   html+='<div class="tg-hcell timecol"></div>';
   cols.forEach((c,i)=>{html+='<div class="tg-hcell '+getColClass(c,i)+'">'+getColHeader(c,i)+'</div>';});
   html+='</div>';
 
-  // 24h — ligne pleine = heure, ligne pointillée = demi-heure
+  // ---- Corps : wrapper position:relative pour les événements absolus ----
+  html+='<div style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);position:relative;">';
+
+  // --- Colonne des heures ---
+  html+='<div>';
   for(let h=0;h<24;h++){
-    // Ligne heure pleine
-    html+='<div class="tg-row" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
-    html+='<div class="time-label">'+fmtH(h)+'</div>';
-    cols.forEach((c,i)=>{
-      const ds=typeof c==='string'?c:fmtISO(c);
-      const evs=interventions.filter(e=>e.date===ds&&e.debut===fmtH(h));
-      const isToday=ds===todayISO;
-      html+='<div class="tg-cell'+(isToday?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+fmtH(h)+'\',false)">';
-      evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.client||'')+'</div>';});
-      html+='</div>';
-    });
-    html+='</div>';
-    // Ligne demi-heure
-    html+='<div class="tg-row-half" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
-    html+='<div class="time-label"></div>';
-    cols.forEach((c,i)=>{
-      const ds=typeof c==='string'?c:fmtISO(c);
-      const evs=interventions.filter(e=>e.date===ds&&e.debut===fmtH30(h));
-      const isToday=ds===todayISO;
-      html+='<div class="tg-cell'+(isToday?' today-cell':'')+'" onclick="ouvrirFormulaire(null,\''+ds+'\',\''+fmtH30(h)+'\',false)">';
-      evs.forEach(ev=>{html+='<div class="tg-ev" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')" title="'+(ev.client||'')+'">'+( ev.client||'')+'</div>';});
-      html+='</div>';
-    });
+    html+='<div class="tg-row" style="grid-template-columns:unset;">';
+    html+='<div class="time-label" style="height:'+ROW_H+'px;"><span>'+fmtH(h)+'</span></div>';
     html+='</div>';
   }
+  html+='</div>';
+
+  // --- Colonnes jours ---
+  cols.forEach((c,i)=>{
+    const ds=typeof c==='string'?c:fmtISO(c);
+    const isToday=ds===todayISO;
+    const evsDuJour=interventions.filter(e=>e.date===ds);
+
+    html+='<div class="tg-col-body" style="position:relative;">';
+
+    // Lignes de fond (24 rangées cliquables)
+    for(let h=0;h<24;h++){
+      html+='<div class="tg-row" style="grid-template-columns:unset;">';
+      html+='<div class="tg-cell'+(isToday?' today-cell':'')+'"'
+        +' style="height:'+ROW_H+'px;border-right:none;"'
+        +' onclick="ouvrirFormulaire(null,\''+ds+'\',\''+fmtH(h)+'\',false)"></div>';
+      html+='</div>';
+    }
+
+    // Événements en position absolue
+    evsDuJour.forEach(ev=>{
+      const startMin=toMin(ev.debut);
+      const endMin=toMin(ev.fin);
+      if(startMin===null)return;
+      const topPx=(startMin/60)*ROW_H;
+      const durationMin=(endMin!==null&&endMin>startMin)?(endMin-startMin):60;
+      const heightPx=Math.max((durationMin/60)*ROW_H,18);
+      html+='<div class="tg-ev"'
+        +' style="top:'+topPx+'px;height:'+heightPx+'px;"'
+        +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
+        +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+'">'
+        +(ev.debut?ev.debut+' ':'')+(ev.client||'')
+        +'</div>';
+    });
+
+    html+='</div>'; // fin tg-col-body
+  });
+
+  html+='</div>'; // fin grille
   html+='</div></div>';
   return html;
 }
