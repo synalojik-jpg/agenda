@@ -308,7 +308,15 @@ async function chargerDrive(){
   try{
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
-    interventions=JSON.parse(r.body||'[]');
+    const driveData=JSON.parse(r.body||'[]');
+    // Récupérer les données locales (interventions ajoutées hors ligne)
+    const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
+    // Fusionner : Drive en base, compléter avec les entrées locales absentes du Drive
+    const driveIds=new Set(driveData.map(i=>i.id));
+    const localOnly=localData.filter(i=>!driveIds.has(i.id));
+    interventions=[...driveData,...localOnly];
+    // Si des interventions locales manquaient dans Drive, on re-sauvegarde
+    if(localOnly.length>0) await sauvegarder();
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
 }
