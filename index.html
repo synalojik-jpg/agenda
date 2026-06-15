@@ -323,7 +323,6 @@ async function chargerDrive(){
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
 }
-}
 async function sauvegarder(){
   localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   if(!accessToken){afficherStatutSauvegarde('local');return;}
