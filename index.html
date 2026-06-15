@@ -296,6 +296,10 @@ function deconnecter(){
 // ---- DRIVE ----
 async function obtenirFileId(){
   const r=await gapi.client.drive.files.list({q:"name='journal.json' and trashed=false",fields:'files(id)',spaces:'drive'});
+  const r=await gapi.client.drive.files.list({
+  q:"name='journal.json' and trashed=false",
+  fields:'files(id,name,createdTime)',
+
   const f=r.result.files;
   if(f&&f.length>0){FILE_ID=f[0].id;return;}
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
