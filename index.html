@@ -309,19 +309,15 @@ async function chargerDrive(){
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
     const driveData=JSON.parse(r.body||'[]');
-    // IDs supprimés sur d'autres appareils — ne pas les réinjecter
-    const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
-    // Entrées locales ajoutées hors ligne (absentes du Drive et non supprimées)
-    const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
-    const driveIds=new Set(driveData.map(i=>i.id));
-    const deletedIds=new Set(deleted);
-    const localOnly=localData.filter(i=>!driveIds.has(i.id)&&!deletedIds.has(i.id));
-    interventions=[...driveData,...localOnly];
-    // Nettoyer les tombstones déjà absents du Drive (inutiles désormais)
-    localStorage.setItem('synalojik_deleted','[]');
-    if(localOnly.length>0)await sauvegarder();
+    // Drive est la source de vérité — on écrase le localStorage sans fusion
+    interventions=driveData;
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
-  }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
+    localStorage.removeItem('synalojik_deleted');
+  }catch(e){
+    // Hors ligne : on repart du localStorage
+    const l=localStorage.getItem('synalojik_v2');
+    interventions=l?JSON.parse(l):[];
+  }
 }
 async function sauvegarder(){
   localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
