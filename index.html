@@ -324,6 +324,7 @@ async function sauvegarder(){
   localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   if(!accessToken)return;
   try{
+    if(!FILE_ID)await obtenirFileId();
     const form=new FormData();
     form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));
     form.append('file',new Blob([JSON.stringify(interventions)],{type:'application/json'}));
@@ -567,9 +568,9 @@ function getFormData(id){
 }
 
 // ---- ACTIONS ----
-function ajouterIntervention(){interventions.push(getFormData(Date.now().toString()));sauvegarder();render();fermerForm();jourEnCours=null;}
-function modifierIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}interventions[editIdx]=getFormData(interventions[editIdx].id);sauvegarder();render();fermerForm();jourEnCours=null;}
-function supprimerIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}if(!confirm('Supprimer cette intervention ?'))return;interventions.splice(editIdx,1);editIdx=null;sauvegarder();render();fermerForm();jourEnCours=null;}
+async function ajouterIntervention(){interventions.push(getFormData(Date.now().toString()));await sauvegarder();render();fermerForm();jourEnCours=null;}
+async function modifierIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}interventions[editIdx]=getFormData(interventions[editIdx].id);await sauvegarder();render();fermerForm();jourEnCours=null;}
+async function supprimerIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}if(!confirm('Supprimer cette intervention ?'))return;interventions.splice(editIdx,1);editIdx=null;await sauvegarder();render();fermerForm();jourEnCours=null;}
 
 // ---- EXPORT ----
 function exportCSVMois(){
