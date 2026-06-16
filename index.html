@@ -62,7 +62,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-day-names{display:grid;grid-template-columns:repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
 .cal-body{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;max-height:75px;overflow:hidden;padding:3px;cursor:pointer;position:relative;}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:110px;max-height:110px;overflow:hidden;padding:3px;cursor:pointer;position:relative;}
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
@@ -264,7 +264,7 @@ const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 // ---- AUTH ----
 window.addEventListener('load',()=>{
   const local=localStorage.getItem('synalojik_v2');
-  if(local){interventions=JSON.parse(local);render();}
+  if(local){interventions=JSON.parse(local).map(i=>{if(i.montant!==undefined&&i.tarif===undefined){i.tarif=i.montant;delete i.montant;}return i;});render();}
   gapi.load('client',async()=>{
     await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
     tokenClient=google.accounts.oauth2.initTokenClient({
@@ -308,12 +308,20 @@ async function chargerDrive(){
   try{
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
-    interventions=JSON.parse(r.body||'[]');
+    const driveData=JSON.parse(r.body||'[]');
+    // IDs supprimés sur d'autres appareils — ne pas les réinjecter
+    const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
+    // Entrées locales ajoutées hors ligne (absentes du Drive et non supprimées)
+    const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
+    const driveIds=new Set(driveData.map(i=>i.id));
+    const deletedIds=new Set(deleted);
+    const localOnly=localData.filter(i=>!driveIds.has(i.id)&&!deletedIds.has(i.id));
+    interventions=[...driveData,...localOnly];
+    // Nettoyer les tombstones déjà absents du Drive (inutiles désormais)
+    localStorage.setItem('synalojik_deleted','[]');
+    if(localOnly.length>0)await sauvegarder();
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
-  }catch(e){
-    const l=localStorage.getItem('synalojik_v2');
-    interventions=l?JSON.parse(l):[];
-  }
+  }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
 }
 async function sauvegarder(){
   localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
@@ -392,7 +400,7 @@ function renderMois(){
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="allerJour(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.slice(0,2).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.slice(0,3).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
     html+='</div>';
   }
@@ -581,6 +589,11 @@ async function modifierIntervention(){if(editIdx===null){alert('Aucune intervent
 async function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
+  // Mémoriser l'ID supprimé pour éviter la réinjection hors ligne
+  const deletedId=interventions[editIdx].id;
+  const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
+  deleted.push(deletedId);
+  localStorage.setItem('synalojik_deleted',JSON.stringify(deleted));
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
