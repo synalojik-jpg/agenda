@@ -62,7 +62,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-day-names{display:grid;grid-template-columns:repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
 .cal-body{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:110px;max-height:110px;overflow:hidden;padding:3px;cursor:pointer;position:relative;}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;max-height:75px;overflow:hidden;padding:3px;cursor:pointer;position:relative;}
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
@@ -203,6 +203,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
   <div class="stat-card rouge"><div class="stat-label">Total mensuel</div><div class="stat-value" id="stat-total">0 €</div></div>
 </div>
 
+<div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
 <div id="vue-container"></div>
 
 <!-- MODAL LISTE -->
@@ -264,7 +265,7 @@ const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 // ---- AUTH ----
 window.addEventListener('load',()=>{
   const local=localStorage.getItem('synalojik_v2');
-  if(local){interventions=JSON.parse(local).map(i=>{if(i.montant!==undefined&&i.tarif===undefined){i.tarif=i.montant;delete i.montant;}return i;});render();}
+  if(local){interventions=JSON.parse(local);render();}
   gapi.load('client',async()=>{
     await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
     tokenClient=google.accounts.oauth2.initTokenClient({
@@ -377,6 +378,31 @@ document.addEventListener('touchend',e=>{
   if(Math.abs(diff)>60){naviguer(diff>0?1:-1);}
 },{passive:true});
 
+
+// Génère une couleur unique et stable à partir du nom du donneur d'ordre
+function couleurDonneur(donneur){
+  if(!donneur||donneur.trim()==='')return{bg:'linear-gradient(135deg,#1a3ed4,#3a5ef0)',border:'#1a3ed4'};
+  const str=donneur.trim().toUpperCase();
+  let hash=0;
+  for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);}
+  // Palette de couleurs professionnelles
+  const palettes=[
+    {bg:'linear-gradient(135deg,#d41a1a,#ff4444)',border:'#d41a1a'},
+    {bg:'linear-gradient(135deg,#16a34a,#22c55e)',border:'#16a34a'},
+    {bg:'linear-gradient(135deg,#d97706,#f59e0b)',border:'#d97706'},
+    {bg:'linear-gradient(135deg,#7c3aed,#a855f7)',border:'#7c3aed'},
+    {bg:'linear-gradient(135deg,#0891b2,#06b6d4)',border:'#0891b2'},
+    {bg:'linear-gradient(135deg,#be185d,#ec4899)',border:'#be185d'},
+    {bg:'linear-gradient(135deg,#065f46,#10b981)',border:'#065f46'},
+    {bg:'linear-gradient(135deg,#92400e,#f59e0b)',border:'#92400e'},
+    {bg:'linear-gradient(135deg,#1e40af,#60a5fa)',border:'#1e40af'},
+    {bg:'linear-gradient(135deg,#831843,#f43f5e)',border:'#831843'},
+    {bg:'linear-gradient(135deg,#134e4a,#2dd4bf)',border:'#134e4a'},
+    {bg:'linear-gradient(135deg,#4c1d95,#8b5cf6)',border:'#4c1d95'},
+  ];
+  const idx=Math.abs(hash)%palettes.length;
+  return palettes[idx];
+}
 // ---- RENDER ----
 function render(){updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
 
@@ -400,7 +426,7 @@ function renderMois(){
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="allerJour(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.slice(0,3).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.slice(0,2).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
     html+='</div>';
   }
@@ -524,6 +550,16 @@ function updateStats(){
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix));
   document.getElementById('stat-count').textContent=liste.length;
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
+  // Légende des donneurs
+  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim().toUpperCase()).filter(d=>d!==''))];
+  const leg=document.getElementById('legende-donneurs');
+  if(leg){
+    leg.innerHTML=donneurs.map(d=>{
+      const c=couleurDonneur(d);
+      return '<div style="display:flex;align-items:center;gap:5px;background:#fff;padding:4px 10px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:.72rem;font-weight:600;color:#1a1a2e;">'
+        +'<span style="width:10px;height:10px;border-radius:50%;background:'+c.border+';flex-shrink:0;"></span>'+d+'</div>';
+    }).join('');
+  }
 }
 
 // ---- LISTE ----
