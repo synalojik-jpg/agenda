@@ -203,7 +203,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
   <div class="stat-card rouge"><div class="stat-label">Total mensuel</div><div class="stat-value" id="stat-total">0 €</div></div>
 </div>
 
-<div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+<div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d'ordre :</span></div>
 <div id="vue-container"></div>
 
 <!-- MODAL LISTE -->
@@ -379,29 +379,36 @@ document.addEventListener('touchend',e=>{
 },{passive:true});
 
 
-// Génère une couleur unique et stable à partir du nom du donneur d'ordre
+// Palette de couleurs bien différenciées pour les donneurs d'ordre
+const PALETTE_COULEURS = [
+  {bg:'#e63946',border:'#c1121f'},  // rouge vif
+  {bg:'#2a9d8f',border:'#1b6b5a'},  // vert canard
+  {bg:'#e9c46a',border:'#c9952a'},  // jaune ocre
+  {bg:'#6a0572',border:'#4a0350'},  // violet foncé
+  {bg:'#f4a261',border:'#d4722a'},  // orange
+  {bg:'#264653',border:'#1a2f38'},  // bleu nuit
+  {bg:'#06d6a0',border:'#048a66'},  // vert menthe
+  {bg:'#ef476f',border:'#b5003a'},  // rose fuchsia
+  {bg:'#118ab2',border:'#0a5f7a'},  // bleu azur
+  {bg:'#8338ec',border:'#5c20c0'},  // violet électrique
+  {bg:'#fb5607',border:'#c03d00'},  // orange brûlé
+  {bg:'#3a86ff',border:'#1a5fcc'},  // bleu royal
+  {bg:'#b5179e',border:'#7d0f6e'},  // magenta
+  {bg:'#606c38',border:'#3d4524'},  // vert olive
+  {bg:'#f72585',border:'#b5006a'},  // rose flashy
+  {bg:'#4cc9f0',border:'#1a9fcc'},  // bleu ciel
+  {bg:'#7b2d00',border:'#4a1a00'},  // marron
+];
+
 function couleurDonneur(donneur){
-  if(!donneur||donneur.trim()==='')return{bg:'linear-gradient(135deg,#1a3ed4,#3a5ef0)',border:'#1a3ed4'};
+  if(!donneur||donneur.trim()===''){
+    return{bg:'#1a3ed4',border:'#0f2490'};
+  }
   const str=donneur.trim().toUpperCase();
   let hash=0;
   for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);}
-  // Palette de couleurs professionnelles
-  const palettes=[
-    {bg:'linear-gradient(135deg,#d41a1a,#ff4444)',border:'#d41a1a'},
-    {bg:'linear-gradient(135deg,#16a34a,#22c55e)',border:'#16a34a'},
-    {bg:'linear-gradient(135deg,#d97706,#f59e0b)',border:'#d97706'},
-    {bg:'linear-gradient(135deg,#7c3aed,#a855f7)',border:'#7c3aed'},
-    {bg:'linear-gradient(135deg,#0891b2,#06b6d4)',border:'#0891b2'},
-    {bg:'linear-gradient(135deg,#be185d,#ec4899)',border:'#be185d'},
-    {bg:'linear-gradient(135deg,#065f46,#10b981)',border:'#065f46'},
-    {bg:'linear-gradient(135deg,#92400e,#f59e0b)',border:'#92400e'},
-    {bg:'linear-gradient(135deg,#1e40af,#60a5fa)',border:'#1e40af'},
-    {bg:'linear-gradient(135deg,#831843,#f43f5e)',border:'#831843'},
-    {bg:'linear-gradient(135deg,#134e4a,#2dd4bf)',border:'#134e4a'},
-    {bg:'linear-gradient(135deg,#4c1d95,#8b5cf6)',border:'#4c1d95'},
-  ];
-  const idx=Math.abs(hash)%palettes.length;
-  return palettes[idx];
+  const idx=Math.abs(hash)%PALETTE_COULEURS.length;
+  return PALETTE_COULEURS[idx];
 }
 // ---- RENDER ----
 function render(){updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
@@ -550,16 +557,6 @@ function updateStats(){
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix));
   document.getElementById('stat-count').textContent=liste.length;
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
-  // Légende des donneurs
-  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim().toUpperCase()).filter(d=>d!==''))];
-  const leg=document.getElementById('legende-donneurs');
-  if(leg){
-    leg.innerHTML=donneurs.map(d=>{
-      const c=couleurDonneur(d);
-      return '<div style="display:flex;align-items:center;gap:5px;background:#fff;padding:4px 10px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:.72rem;font-weight:600;color:#1a1a2e;">'
-        +'<span style="width:10px;height:10px;border-radius:50%;background:'+c.border+';flex-shrink:0;"></span>'+d+'</div>';
-    }).join('');
-  }
 }
 
 // ---- LISTE ----
