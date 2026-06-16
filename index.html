@@ -234,13 +234,13 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
       </div>
       <div class="form-row-2">
         <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin" step="1800"></div>
-        <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
       </div>
-      <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></textarea></div>
+      <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
+      <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
       <div class="form-row-2">
-        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" placeholder="Donneur d'ordre" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-        <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" placeholder="Donneur d'ordre"></div>
+        <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
       <div class="btn-row">
@@ -270,7 +270,7 @@ window.addEventListener('load',()=>{
     tokenClient=google.accounts.oauth2.initTokenClient({
       client_id:CLIENT_ID,scope:SCOPES,
       callback:async(resp)=>{
-        if(resp.error){console.warn('Token error',resp.error);return;}
+        if(resp.error)return;
         accessToken=resp.access_token;
         const s=document.getElementById('statut');
         s.className='ok';s.innerHTML='<span class="dot"></span><span>Connecté</span>';
@@ -279,7 +279,6 @@ window.addEventListener('load',()=>{
         await chargerDrive();render();
       }
     });
-    setTimeout(()=>{if(!accessToken)render();},5000);
     tokenClient.requestAccessToken({prompt:''});
   });
 });
@@ -309,13 +308,9 @@ async function chargerDrive(){
   try{
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
-    const driveData=JSON.parse(r.body||'[]');
-    // Drive est la source de vérité — on écrase le localStorage sans fusion
-    interventions=driveData;
+    interventions=JSON.parse(r.body||'[]');
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
-    localStorage.removeItem('synalojik_deleted');
   }catch(e){
-    // Hors ligne : on repart du localStorage
     const l=localStorage.getItem('synalojik_v2');
     interventions=l?JSON.parse(l):[];
   }
@@ -586,11 +581,6 @@ async function modifierIntervention(){if(editIdx===null){alert('Aucune intervent
 async function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
-  // Mémoriser l'ID supprimé pour éviter la réinjection hors ligne
-  const deletedId=interventions[editIdx].id;
-  const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
-  deleted.push(deletedId);
-  localStorage.setItem('synalojik_deleted',JSON.stringify(deleted));
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
