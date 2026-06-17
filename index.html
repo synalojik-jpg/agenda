@@ -378,29 +378,31 @@ document.addEventListener('touchend',e=>{
   if(Math.abs(diff)>60){naviguer(diff>0?1:-1);}
 },{passive:true});
 
+
+// ---- COULEURS PAR DONNEUR D'ORDRE ----
 const PALETTE=[
-  {bg:'#e63946',bd:'#c1121f'},{bg:'#2a9d8f',bd:'#1b6b5a'},
-  {bg:'#e9a820',bd:'#b87c10'},{bg:'#7209b7',bd:'#4a0380'},
-  {bg:'#f4a261',bd:'#c06820'},{bg:'#264653',bd:'#1a2f38'},
-  {bg:'#06d6a0',bd:'#048a66'},{bg:'#ef476f',bd:'#b5003a'},
-  {bg:'#118ab2',bd:'#0a5f7a'},{bg:'#8338ec',bd:'#5c20c0'},
-  {bg:'#fb5607',bd:'#c03d00'},{bg:'#3a86ff',bd:'#1a5fcc'},
-  {bg:'#b5179e',bd:'#7d0f6e'},{bg:'#606c38',bd:'#3d4524'},
-  {bg:'#f72585',bd:'#b5006a'},{bg:'#0096c7',bd:'#005f8a'},
-  {bg:'#7b2d00',bd:'#4a1a00'},{bg:'#386641',bd:'#1e3d22'},
-  {bg:'#bc4749',bd:'#8a2022'},{bg:'#6d6875',bd:'#3d3845'},
-  {bg:'#c77dff',bd:'#7b2fff'},{bg:'#0077b6',bd:'#023e8a'},
-  {bg:'#d62828',bd:'#9b1515'},{bg:'#023047',bd:'#011824'},
-  {bg:'#8ecae6',bd:'#219ebc'},{bg:'#ffb703',bd:'#cc8800'},
-  {bg:'#e07a5f',bd:'#b04020'},{bg:'#3d405b',bd:'#1a1c2e'},
-  {bg:'#81b29a',bd:'#4a7a5a'},{bg:'#f2cc8f',bd:'#c09040'},
+  '#e63946','#2a9d8f','#e9a820','#7209b7','#f4a261','#264653',
+  '#06d6a0','#ef476f','#118ab2','#8338ec','#fb5607','#3a86ff',
+  '#b5179e','#606c38','#f72585','#0096c7','#7b2d00','#386641',
+  '#bc4749','#6d6875','#c77dff','#0077b6','#d62828','#023047',
+  '#219ebc','#ffb703','#e07a5f','#3d405b','#81b29a','#f2cc8f',
 ];
+// Map donneur -> couleur assignée dans l'ordre d'apparition
+const DONNEUR_COULEURS={};
+let PALETTE_IDX=0;
 function couleurDonneur(donneur){
-  if(!donneur||donneur.trim()==='')return{bg:'#1a3ed4',bd:'#0f2490'};
-  const str=donneur.trim().toUpperCase().replace(/\s+/g,' ');
-  let hash=0;
-  for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);}
-  return PALETTE[Math.abs(hash)%PALETTE.length];
+  if(!donneur||donneur.trim()==='')return'#1a3ed4';
+  const key=donneur.trim().toUpperCase();
+  if(!DONNEUR_COULEURS[key]){
+    DONNEUR_COULEURS[key]=PALETTE[PALETTE_IDX%PALETTE.length];
+    PALETTE_IDX++;
+  }
+  return DONNEUR_COULEURS[key];
+}
+function initCouleurs(){
+  // Initialiser les couleurs dans l'ordre alphabétique pour cohérence
+  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
+  donneurs.forEach(d=>couleurDonneur(d));
 }
 async function supprimerDonneur(donneur){
   const key=donneur.trim().toUpperCase();
@@ -411,7 +413,7 @@ async function supprimerDonneur(donneur){
   await sauvegarder();render();
 }
 // ---- RENDER ----
-function render(){updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
+function render(){initCouleurs();updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
 
 // ---- VUE MOIS ----
 function renderMois(){
@@ -434,8 +436,8 @@ function renderMois(){
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
     evs.slice(0,3).forEach(ev=>{
-      const c=couleurDonneur(ev.donneur);
-      html+='<div class="ev-chip" style="background:'+c.bg+';">'+(ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';
+      const bgC=couleurDonneur(ev.donneur);
+      html+='<div class="ev-chip" style="background:'+bgC+';">'+(ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';
     });
     if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
     html+='</div>';
@@ -560,17 +562,15 @@ function updateStats(){
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix));
   document.getElementById('stat-count').textContent=liste.length;
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
-  const map={};
-  interventions.forEach(i=>{const k=(i.donneur||'').trim().toUpperCase();if(k&&!map[k])map[k]=(i.donneur||'').trim();});
-  const donneurs=Object.keys(map).sort().map(k=>map[k]);
+  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
   const leg=document.getElementById('legende-donneurs');
   if(leg){
     if(donneurs.length===0){leg.innerHTML='';return;}
     let html='<span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Donneurs :</span>';
     donneurs.forEach(d=>{
-      const c=couleurDonneur(d);
-      const safe=d.replace(/'/g,"\\'");
-      html+='<div onclick="supprimerDonneur(\''+safe+'\')" title="Supprimer tous les événements de '+d+'" style="display:flex;align-items:center;gap:5px;background:'+c.bg+';color:#fff;padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);" onmouseover="this.style.opacity=.8" onmouseout="this.style.opacity=1">'
+      const bg=couleurDonneur(d);
+      const safe=d.replace(/'/g,"\'");
+      html+='<div onclick="supprimerDonneur(''+safe+'')" title="Supprimer tous les événements de '+d+'" style="display:flex;align-items:center;gap:5px;background:'+bg+';color:#fff;padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);" onmouseover="this.style.opacity=.8" onmouseout="this.style.opacity=1">'
         +'<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0;display:inline-block;"></span>&nbsp;'+d+' <span style="opacity:.7;">✕</span></div>';
     });
     leg.innerHTML=html;
@@ -640,11 +640,6 @@ async function modifierIntervention(){if(editIdx===null){alert('Aucune intervent
 async function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
-  // Mémoriser l'ID supprimé pour éviter la réinjection hors ligne
-  const deletedId=interventions[editIdx].id;
-  const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
-  deleted.push(deletedId);
-  localStorage.setItem('synalojik_deleted',JSON.stringify(deleted));
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
