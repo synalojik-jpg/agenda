@@ -178,8 +178,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
     </div>
   </div>
   <div class="hright">
-    <span id="statut"><span class="dot"></span><span>Non connecté</span></span>
-    <button id="btn-cx" onclick="demanderConnexion()">Connexion</button>
+    <span id="statut"><span class="dot"></span><span>Local</span></span>
+    <button id="btn-cx" onclick="demanderConnexion()" title="Connecter Google Drive pour synchro PC ↔ téléphone">☁ Drive</button>
   </div>
 </header>
 
@@ -280,7 +280,7 @@ window.addEventListener('load',()=>{
         await chargerDrive();render();
       }
     });
-    tokenClient.requestAccessToken({prompt:''});
+    // NE PAS connecter automatiquement — attendre le clic utilisateur pour éviter popup bloquée
   });
 });
 function demanderConnexion(){tokenClient.requestAccessToken({prompt:'consent'});}
