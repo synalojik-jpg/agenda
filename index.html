@@ -569,8 +569,8 @@ function updateStats(){
     let html='<span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Donneurs :</span>';
     donneurs.forEach(d=>{
       const bg=couleurDonneur(d);
-      const safe=d.replace(/'/g,"\'");
-      html+='<div onclick="supprimerDonneur(''+safe+'')" title="Supprimer tous les événements de '+d+'" style="display:flex;align-items:center;gap:5px;background:'+bg+';color:#fff;padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);" onmouseover="this.style.opacity=.8" onmouseout="this.style.opacity=1">'
+      const idx2=donneurs.indexOf(d);
+      html+='<div data-donneur="'+encodeURIComponent(d)+'" onclick="supprimerDonneur(decodeURIComponent(this.dataset.donneur))" title="Supprimer tous les événements de '+d+'" style="display:flex;align-items:center;gap:5px;background:'+bg+';color:#fff;padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);" onmouseover="this.style.opacity=.8" onmouseout="this.style.opacity=1">'
         +'<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0;display:inline-block;"></span>&nbsp;'+d+' <span style="opacity:.7;">✕</span></div>';
     });
     leg.innerHTML=html;
