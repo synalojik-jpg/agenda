@@ -258,7 +258,6 @@ const CLIENT_ID='857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleuserco
 const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
-let deletedIds=new Set(); // tombstones partagés via Drive
 let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
@@ -281,10 +280,7 @@ window.addEventListener('load',()=>{
         await chargerDrive();render();
       }
     });
-    // Tentative de reconnexion silencieuse (sans prompt = pas de popup)
-    // Si le token est déjà en cache, la connexion se fait automatiquement
-    // Si pas de token, l'utilisateur doit cliquer sur Connexion
-    try{tokenClient.requestAccessToken({prompt:''});}catch(e){}
+    tokenClient.requestAccessToken({prompt:''});
   });
 });
 function demanderConnexion(){tokenClient.requestAccessToken({prompt:'consent'});}
@@ -300,28 +296,12 @@ function deconnecter(){
 
 // ---- DRIVE ----
 async function obtenirFileId(){
-  // 1. Chercher synalojik.json (nouveau format avec tombstones)
-  const r1=await gapi.client.drive.files.list({q:"name='synalojik.json' and trashed=false",fields:'files(id)',spaces:'drive'});
-  if(r1.result.files&&r1.result.files.length>0){FILE_ID=r1.result.files[0].id;return;}
-  // 2. Migration : ancien journal.json → synalojik.json
-  const r2=await gapi.client.drive.files.list({q:"name='journal.json' and trashed=false",fields:'files(id)',spaces:'drive'});
-  if(r2.result.files&&r2.result.files.length>0){
-    const ancienId=r2.result.files[0].id;
-    const rd=await gapi.client.drive.files.get({fileId:ancienId,alt:'media'});
-    const anciennes=JSON.parse(rd.body||'[]');
-    const payload=JSON.stringify({interventions:Array.isArray(anciennes)?anciennes:[],deleted:[]});
-    const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
-      method:'POST',headers:{'Authorization':'Bearer '+accessToken},
-      body:(()=>{const form=new FormData();form.append('metadata',new Blob([JSON.stringify({name:'synalojik.json',mimeType:'application/json'})],{type:'application/json'}));form.append('file',new Blob([payload],{type:'application/json'}));return form;})()
-    });
-    FILE_ID=(await res.json()).id;
-    return;
-  }
-  // 3. Aucun fichier existant → créer synalojik.json vide
-  const init=JSON.stringify({interventions:[],deleted:[]});
+  const r=await gapi.client.drive.files.list({q:"name='journal.json' and trashed=false",fields:'files(id)',spaces:'drive'});
+  const f=r.result.files;
+  if(f&&f.length>0){FILE_ID=f[0].id;return;}
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
     method:'POST',headers:{'Authorization':'Bearer '+accessToken},
-    body:(()=>{const form=new FormData();form.append('metadata',new Blob([JSON.stringify({name:'synalojik.json',mimeType:'application/json'})],{type:'application/json'}));form.append('file',new Blob([init],{type:'application/json'}));return form;})()
+    body:(()=>{const form=new FormData();form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));form.append('file',new Blob(['[]'],{type:'application/json'}));return form;})()
   });
   FILE_ID=(await res.json()).id;
 }
@@ -329,17 +309,17 @@ async function chargerDrive(){
   try{
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
-    const raw=JSON.parse(r.body||'{}');
-    // Compatibilité ancien format (tableau simple)
-    const driveInterventions=Array.isArray(raw)?raw:(raw.interventions||[]);
-    const driveDeleted=Array.isArray(raw)?[]:(raw.deleted||[]);
-    deletedIds=new Set(driveDeleted);
-    // Entrées locales hors ligne non encore dans Drive et non supprimées
+    const driveData=JSON.parse(r.body||'[]');
+    // IDs supprimés sur d'autres appareils — ne pas les réinjecter
+    const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
+    // Entrées locales ajoutées hors ligne (absentes du Drive et non supprimées)
     const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
-    const driveIdSet=new Set(driveInterventions.map(i=>i.id));
-    const localOnly=localData.filter(i=>!driveIdSet.has(i.id)&&!deletedIds.has(i.id));
-    // Fusionner puis filtrer les supprimés
-    interventions=[...driveInterventions,...localOnly].filter(i=>!deletedIds.has(i.id));
+    const driveIds=new Set(driveData.map(i=>i.id));
+    const deletedIds=new Set(deleted);
+    const localOnly=localData.filter(i=>!driveIds.has(i.id)&&!deletedIds.has(i.id));
+    interventions=[...driveData,...localOnly];
+    // Nettoyer les tombstones déjà absents du Drive (inutiles désormais)
+    localStorage.setItem('synalojik_deleted','[]');
     if(localOnly.length>0)await sauvegarder();
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
@@ -350,8 +330,8 @@ async function sauvegarder(){
   try{
     if(!FILE_ID)await obtenirFileId();
     const form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify({name:'synalojik.json',mimeType:'application/json'})],{type:'application/json'}));
-    form.append('file',new Blob([JSON.stringify({interventions,deleted:[...deletedIds]})],{type:'application/json'}));
+    form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));
+    form.append('file',new Blob([JSON.stringify(interventions)],{type:'application/json'}));
     const res=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+FILE_ID+'?uploadType=multipart',{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken},body:form});
     if(res.ok){afficherStatutSauvegarde('ok');}
     else{afficherStatutSauvegarde('erreur');console.error('Drive error',res.status);}
@@ -420,15 +400,14 @@ const PALETTE_COULEURS = [
   {bg:'#7b2d00',border:'#4a1a00'},  // marron
 ];
 
-// Hash déterministe : même résultat sur tous les appareils (Math.imul)
 function couleurDonneur(donneur){
   if(!donneur||donneur.trim()===''){
     return{bg:'#1a3ed4',border:'#0f2490'};
   }
   const str=donneur.trim().toUpperCase();
-  let h=0;
-  for(let i=0;i<str.length;i++){h=(Math.imul(31,h)+str.charCodeAt(i))|0;}
-  const idx=Math.abs(h)%PALETTE_COULEURS.length;
+  let hash=0;
+  for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);}
+  const idx=Math.abs(hash)%PALETTE_COULEURS.length;
   return PALETTE_COULEURS[idx];
 }
 // ---- RENDER ----
@@ -643,7 +622,11 @@ async function modifierIntervention(){if(editIdx===null){alert('Aucune intervent
 async function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
-  deletedIds.add(interventions[editIdx].id); // tombstone partagé via Drive
+  // Mémoriser l'ID supprimé pour éviter la réinjection hors ligne
+  const deletedId=interventions[editIdx].id;
+  const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
+  deleted.push(deletedId);
+  localStorage.setItem('synalojik_deleted',JSON.stringify(deleted));
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
