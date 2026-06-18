@@ -258,6 +258,7 @@ const CLIENT_ID='857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleuserco
 const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
+let deletedIds=new Set();
 let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
@@ -296,12 +297,13 @@ function deconnecter(){
 
 // ---- DRIVE ----
 async function obtenirFileId(){
-  const r=await gapi.client.drive.files.list({q:"name='journal.json' and trashed=false",fields:'files(id)',spaces:'drive'});
+  const r=await gapi.client.drive.files.list({q:"name='synalojik.json' and trashed=false",fields:'files(id)',spaces:'drive'});
   const f=r.result.files;
   if(f&&f.length>0){FILE_ID=f[0].id;return;}
+  const init=JSON.stringify({interventions:[],deleted:[]});
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
     method:'POST',headers:{'Authorization':'Bearer '+accessToken},
-    body:(()=>{const form=new FormData();form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));form.append('file',new Blob(['[]'],{type:'application/json'}));return form;})()
+    body:(()=>{const form=new FormData();form.append('metadata',new Blob([JSON.stringify({name:'synalojik.json',mimeType:'application/json'})],{type:'application/json'}));form.append('file',new Blob([init],{type:'application/json'}));return form;})()
   });
   FILE_ID=(await res.json()).id;
 }
@@ -309,16 +311,17 @@ async function chargerDrive(){
   try{
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
-    const driveData=JSON.parse(r.body||'[]');
-    // IDs supprimés sur d'autres appareils — ne pas les réinjecter
-    const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
-    // Entrées locales ajoutées hors ligne (absentes du Drive et non supprimées)
+    const raw=JSON.parse(r.body||'{}');
+    // Compatibilité ancien format (tableau simple)
+    const driveInterventions=Array.isArray(raw)?raw:(raw.interventions||[]);
+    const driveDeleted=Array.isArray(raw)?[]:(raw.deleted||[]);
+    deletedIds=new Set(driveDeleted);
+    // Entrées locales hors ligne non encore dans Drive et non supprimées
     const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
-    const driveIds=new Set(driveData.map(i=>i.id));
-    const deletedIds=new Set(deleted);
-    const localOnly=localData.filter(i=>!driveIds.has(i.id)&&!deletedIds.has(i.id));
-    interventions=[...driveData,...localOnly];
-    // Les tombstones sont conservés pour éviter de réimporter des entrées supprimées
+    const driveIdSet=new Set(driveInterventions.map(i=>i.id));
+    const localOnly=localData.filter(i=>!driveIdSet.has(i.id)&&!deletedIds.has(i.id));
+    // Fusionner puis filtrer les supprimés
+    interventions=[...driveInterventions,...localOnly].filter(i=>!deletedIds.has(i.id));
     if(localOnly.length>0)await sauvegarder();
     localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
@@ -329,8 +332,8 @@ async function sauvegarder(){
   try{
     if(!FILE_ID)await obtenirFileId();
     const form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));
-    form.append('file',new Blob([JSON.stringify(interventions)],{type:'application/json'}));
+    form.append('metadata',new Blob([JSON.stringify({name:'synalojik.json',mimeType:'application/json'})],{type:'application/json'}));
+    form.append('file',new Blob([JSON.stringify({interventions,deleted:[...deletedIds]})],{type:'application/json'}));
     const res=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+FILE_ID+'?uploadType=multipart',{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken},body:form});
     if(res.ok){afficherStatutSauvegarde('ok');}
     else{afficherStatutSauvegarde('erreur');console.error('Drive error',res.status);}
@@ -386,28 +389,20 @@ const PALETTE=[
   '#bc4749','#6d6875','#c77dff','#0077b6','#d62828','#023047',
   '#219ebc','#ffb703','#e07a5f','#3d405b','#81b29a','#f2cc8f',
 ];
-// Map donneur -> couleur assignée dans l'ordre d'apparition
-const DONNEUR_COULEURS={};
-let PALETTE_IDX=0;
+// Couleur stable par hash → même couleur sur tous les appareils
 function couleurDonneur(donneur){
   if(!donneur||donneur.trim()==='')return'#1a3ed4';
   const key=donneur.trim().toUpperCase();
-  if(!DONNEUR_COULEURS[key]){
-    DONNEUR_COULEURS[key]=PALETTE[PALETTE_IDX%PALETTE.length];
-    PALETTE_IDX++;
-  }
-  return DONNEUR_COULEURS[key];
+  let h=0;for(let i=0;i<key.length;i++){h=(Math.imul(31,h)+key.charCodeAt(i))|0;}
+  return PALETTE[Math.abs(h)%PALETTE.length];
 }
-function initCouleurs(){
-  // Initialiser les couleurs dans l'ordre alphabétique pour cohérence
-  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
-  donneurs.forEach(d=>couleurDonneur(d));
-}
+function initCouleurs(){/* no-op, hash déterministe */}
 async function supprimerDonneur(donneur){
   const key=donneur.trim().toUpperCase();
   const evs=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()===key);
   if(evs.length===0){alert('Aucun événement pour ce donneur.');return;}
   if(!confirm('Supprimer les '+evs.length+' événement(s) de "'+donneur+'" ?'))return;
+  evs.forEach(i=>deletedIds.add(i.id));
   interventions=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()!==key);
   await sauvegarder();render();
 }
@@ -640,11 +635,7 @@ async function modifierIntervention(){if(editIdx===null){alert('Aucune intervent
 async function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
-  // Enregistrer le tombstone pour synchro entre appareils
-  const deletedId=interventions[editIdx].id;
-  const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
-  deleted.push(deletedId);
-  localStorage.setItem('synalojik_deleted',JSON.stringify(deleted));
+  deletedIds.add(interventions[editIdx].id);
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
