@@ -178,8 +178,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
     </div>
   </div>
   <div class="hright">
-    <span id="statut"><span class="dot"></span><span>Local</span></span>
-    <button id="btn-cx" onclick="demanderConnexion()" title="Connecter Google Drive pour synchro PC ↔ téléphone">☁ Drive</button>
+    <span id="statut"><span class="dot"></span><span>Non connecté</span></span>
+    <button id="btn-cx" onclick="demanderConnexion()">Connexion</button>
   </div>
 </header>
 
@@ -203,7 +203,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
   <div class="stat-card rouge"><div class="stat-label">Total mensuel</div><div class="stat-value" id="stat-total">0 €</div></div>
 </div>
 
-<div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;"></div>
+<div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d'ordre :</span></div>
 <div id="vue-container"></div>
 
 <!-- MODAL LISTE -->
@@ -258,7 +258,7 @@ const CLIENT_ID='857421313712-ge30q9selkt0s0t0dpa26g7c5l5oqbah.apps.googleuserco
 const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
-let deletedIds=new Set();
+let deletedIds=new Set(); // tombstones partagés via Drive
 let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
@@ -281,7 +281,10 @@ window.addEventListener('load',()=>{
         await chargerDrive();render();
       }
     });
-    // NE PAS connecter automatiquement — attendre le clic utilisateur pour éviter popup bloquée
+    // Tentative de reconnexion silencieuse (sans prompt = pas de popup)
+    // Si le token est déjà en cache, la connexion se fait automatiquement
+    // Si pas de token, l'utilisateur doit cliquer sur Connexion
+    try{tokenClient.requestAccessToken({prompt:''});}catch(e){}
   });
 });
 function demanderConnexion(){tokenClient.requestAccessToken({prompt:'consent'});}
@@ -297,15 +300,14 @@ function deconnecter(){
 
 // ---- DRIVE ----
 async function obtenirFileId(){
-  // 1. Chercher synalojik.json (nouveau format)
+  // 1. Chercher synalojik.json (nouveau format avec tombstones)
   const r1=await gapi.client.drive.files.list({q:"name='synalojik.json' and trashed=false",fields:'files(id)',spaces:'drive'});
   if(r1.result.files&&r1.result.files.length>0){FILE_ID=r1.result.files[0].id;return;}
-  // 2. Chercher journal.json (ancien format) → migration
+  // 2. Migration : ancien journal.json → synalojik.json
   const r2=await gapi.client.drive.files.list({q:"name='journal.json' and trashed=false",fields:'files(id)',spaces:'drive'});
   if(r2.result.files&&r2.result.files.length>0){
-    // Lire l'ancien fichier et migrer vers synalojik.json
-    const ancien=r2.result.files[0].id;
-    const rd=await gapi.client.drive.files.get({fileId:ancien,alt:'media'});
+    const ancienId=r2.result.files[0].id;
+    const rd=await gapi.client.drive.files.get({fileId:ancienId,alt:'media'});
     const anciennes=JSON.parse(rd.body||'[]');
     const payload=JSON.stringify({interventions:Array.isArray(anciennes)?anciennes:[],deleted:[]});
     const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
@@ -315,7 +317,7 @@ async function obtenirFileId(){
     FILE_ID=(await res.json()).id;
     return;
   }
-  // 3. Aucun fichier → créer synalojik.json vide
+  // 3. Aucun fichier existant → créer synalojik.json vide
   const init=JSON.stringify({interventions:[],deleted:[]});
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
     method:'POST',headers:{'Authorization':'Bearer '+accessToken},
@@ -397,33 +399,40 @@ document.addEventListener('touchend',e=>{
 },{passive:true});
 
 
-// ---- COULEURS PAR DONNEUR D'ORDRE ----
-const PALETTE=[
-  '#e63946','#2a9d8f','#e9a820','#7209b7','#f4a261','#264653',
-  '#06d6a0','#ef476f','#118ab2','#8338ec','#fb5607','#3a86ff',
-  '#b5179e','#606c38','#f72585','#0096c7','#7b2d00','#386641',
-  '#bc4749','#6d6875','#c77dff','#0077b6','#d62828','#023047',
-  '#219ebc','#ffb703','#e07a5f','#3d405b','#81b29a','#f2cc8f',
+// Palette de couleurs bien différenciées pour les donneurs d'ordre
+const PALETTE_COULEURS = [
+  {bg:'#e63946',border:'#c1121f'},  // rouge vif
+  {bg:'#2a9d8f',border:'#1b6b5a'},  // vert canard
+  {bg:'#e9c46a',border:'#c9952a'},  // jaune ocre
+  {bg:'#6a0572',border:'#4a0350'},  // violet foncé
+  {bg:'#f4a261',border:'#d4722a'},  // orange
+  {bg:'#264653',border:'#1a2f38'},  // bleu nuit
+  {bg:'#06d6a0',border:'#048a66'},  // vert menthe
+  {bg:'#ef476f',border:'#b5003a'},  // rose fuchsia
+  {bg:'#118ab2',border:'#0a5f7a'},  // bleu azur
+  {bg:'#8338ec',border:'#5c20c0'},  // violet électrique
+  {bg:'#fb5607',border:'#c03d00'},  // orange brûlé
+  {bg:'#3a86ff',border:'#1a5fcc'},  // bleu royal
+  {bg:'#b5179e',border:'#7d0f6e'},  // magenta
+  {bg:'#606c38',border:'#3d4524'},  // vert olive
+  {bg:'#f72585',border:'#b5006a'},  // rose flashy
+  {bg:'#4cc9f0',border:'#1a9fcc'},  // bleu ciel
+  {bg:'#7b2d00',border:'#4a1a00'},  // marron
 ];
-// Couleur stable par hash → même couleur sur tous les appareils
+
+// Hash déterministe : même résultat sur tous les appareils (Math.imul)
 function couleurDonneur(donneur){
-  if(!donneur||donneur.trim()==='')return'#1a3ed4';
-  const key=donneur.trim().toUpperCase();
-  let h=0;for(let i=0;i<key.length;i++){h=(Math.imul(31,h)+key.charCodeAt(i))|0;}
-  return PALETTE[Math.abs(h)%PALETTE.length];
-}
-function initCouleurs(){/* no-op, hash déterministe */}
-async function supprimerDonneur(donneur){
-  const key=donneur.trim().toUpperCase();
-  const evs=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()===key);
-  if(evs.length===0){alert('Aucun événement pour ce donneur.');return;}
-  if(!confirm('Supprimer les '+evs.length+' événement(s) de "'+donneur+'" ?'))return;
-  evs.forEach(i=>deletedIds.add(i.id));
-  interventions=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()!==key);
-  await sauvegarder();render();
+  if(!donneur||donneur.trim()===''){
+    return{bg:'#1a3ed4',border:'#0f2490'};
+  }
+  const str=donneur.trim().toUpperCase();
+  let h=0;
+  for(let i=0;i<str.length;i++){h=(Math.imul(31,h)+str.charCodeAt(i))|0;}
+  const idx=Math.abs(h)%PALETTE_COULEURS.length;
+  return PALETTE_COULEURS[idx];
 }
 // ---- RENDER ----
-function render(){initCouleurs();updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
+function render(){updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
 
 // ---- VUE MOIS ----
 function renderMois(){
@@ -445,10 +454,7 @@ function renderMois(){
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="allerJour(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.slice(0,3).forEach(ev=>{
-      const bgC=couleurDonneur(ev.donneur);
-      html+='<div class="ev-chip" style="background:'+bgC+';">'+(ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';
-    });
+    evs.slice(0,2).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
     html+='</div>';
   }
@@ -518,9 +524,8 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
       const topPx=(startMin/60)*ROW_H;
       const durationMin=(endMin!==null&&endMin>startMin)?(endMin-startMin):60;
       const heightPx=Math.max((durationMin/60)*ROW_H,18);
-      const evBg=couleurDonneur(ev.donneur||ev.client||'');
       html+='<div class="tg-ev"'
-        +' style="top:'+topPx+'px;height:'+heightPx+'px;background:'+evBg+';"'
+        +' style="top:'+topPx+'px;height:'+heightPx+'px;"'
         +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
         +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+'">'
         +(ev.debut?ev.debut+' ':'')+(ev.client||'')
@@ -573,19 +578,6 @@ function updateStats(){
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix));
   document.getElementById('stat-count').textContent=liste.length;
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
-  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
-  const leg=document.getElementById('legende-donneurs');
-  if(leg){
-    if(donneurs.length===0){leg.innerHTML='';return;}
-    let html='<span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Donneurs :</span>';
-    donneurs.forEach(d=>{
-      const bg=couleurDonneur(d);
-      const idx2=donneurs.indexOf(d);
-      html+='<div data-donneur="'+encodeURIComponent(d)+'" onclick="supprimerDonneur(decodeURIComponent(this.dataset.donneur))" title="Supprimer tous les événements de '+d+'" style="display:flex;align-items:center;gap:5px;background:'+bg+';color:#fff;padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);" onmouseover="this.style.opacity=.8" onmouseout="this.style.opacity=1">'
-        +'<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0;display:inline-block;"></span>&nbsp;'+d+' <span style="opacity:.7;">✕</span></div>';
-    });
-    leg.innerHTML=html;
-  }
 }
 
 // ---- LISTE ----
@@ -651,7 +643,7 @@ async function modifierIntervention(){if(editIdx===null){alert('Aucune intervent
 async function supprimerIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   if(!confirm('Supprimer cette intervention ?'))return;
-  deletedIds.add(interventions[editIdx].id);
+  deletedIds.add(interventions[editIdx].id); // tombstone partagé via Drive
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
