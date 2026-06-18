@@ -297,9 +297,25 @@ function deconnecter(){
 
 // ---- DRIVE ----
 async function obtenirFileId(){
-  const r=await gapi.client.drive.files.list({q:"name='synalojik.json' and trashed=false",fields:'files(id)',spaces:'drive'});
-  const f=r.result.files;
-  if(f&&f.length>0){FILE_ID=f[0].id;return;}
+  // 1. Chercher synalojik.json (nouveau format)
+  const r1=await gapi.client.drive.files.list({q:"name='synalojik.json' and trashed=false",fields:'files(id)',spaces:'drive'});
+  if(r1.result.files&&r1.result.files.length>0){FILE_ID=r1.result.files[0].id;return;}
+  // 2. Chercher journal.json (ancien format) → migration
+  const r2=await gapi.client.drive.files.list({q:"name='journal.json' and trashed=false",fields:'files(id)',spaces:'drive'});
+  if(r2.result.files&&r2.result.files.length>0){
+    // Lire l'ancien fichier et migrer vers synalojik.json
+    const ancien=r2.result.files[0].id;
+    const rd=await gapi.client.drive.files.get({fileId:ancien,alt:'media'});
+    const anciennes=JSON.parse(rd.body||'[]');
+    const payload=JSON.stringify({interventions:Array.isArray(anciennes)?anciennes:[],deleted:[]});
+    const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
+      method:'POST',headers:{'Authorization':'Bearer '+accessToken},
+      body:(()=>{const form=new FormData();form.append('metadata',new Blob([JSON.stringify({name:'synalojik.json',mimeType:'application/json'})],{type:'application/json'}));form.append('file',new Blob([payload],{type:'application/json'}));return form;})()
+    });
+    FILE_ID=(await res.json()).id;
+    return;
+  }
+  // 3. Aucun fichier → créer synalojik.json vide
   const init=JSON.stringify({interventions:[],deleted:[]});
   const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
     method:'POST',headers:{'Authorization':'Bearer '+accessToken},
