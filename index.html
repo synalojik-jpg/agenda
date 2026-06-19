@@ -410,8 +410,37 @@ function couleurDonneur(donneur){
   const idx=Math.abs(hash)%PALETTE_COULEURS.length;
   return PALETTE_COULEURS[idx];
 }
+// ---- LÉGENDE DONNEURS D'ORDRE ----
+function renderLegende(){
+  const el=document.getElementById('legende-donneurs');
+  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
+  let html='<span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d\'ordre :</span>';
+  if(donneurs.length===0){
+    html+='<span style="font-size:.75rem;color:#9ca3af;">Aucun</span>';
+  } else {
+    donneurs.forEach(d=>{
+      const c=couleurDonneur(d);
+      html+='<span style="display:inline-flex;align-items:center;gap:5px;background:'+c.bg+';color:#fff;font-size:.72rem;font-weight:600;padding:3px 6px 3px 10px;border-radius:14px;">'
+        +d
+        +'<button onclick="event.stopPropagation();supprimerDonneur(\''+d.replace(/'/g,"\\'")+'\')" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:16px;height:16px;border-radius:50%;cursor:pointer;font-size:.65rem;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;" title="Supprimer ce donneur et ses interventions">✕</button>'
+        +'</span>';
+    });
+  }
+  el.innerHTML=html;
+}
+
+async function supprimerDonneur(donneur){
+  const key=donneur.trim().toUpperCase();
+  const evs=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()===key);
+  if(evs.length===0){alert("Aucun événement pour ce donneur.");return;}
+  if(!confirm('Supprimer les '+evs.length+" événement(s) de \""+donneur+'\" ?'))return;
+  evs.forEach(i=>deletedIds.add(i.id)); // tombstones partagés via Drive
+  interventions=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()!==key);
+  await sauvegarder();render();
+}
+
 // ---- RENDER ----
-function render(){updateStats();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
+function render(){updateStats();renderLegende();if(vue==='mois')renderMois();else if(vue==='semaine')renderSemaine();else renderJour();}
 
 // ---- VUE MOIS ----
 function renderMois(){
@@ -433,7 +462,7 @@ function renderMois(){
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="allerJour(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.slice(0,2).forEach(ev=>{html+='<div class="ev-chip">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.slice(0,2).forEach(ev=>{const c=couleurDonneur(ev.donneur);html+='<div class="ev-chip" style="background:'+c.bg+';border-left:3px solid '+c.border+';">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
     html+='</div>';
   }
@@ -503,8 +532,9 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
       const topPx=(startMin/60)*ROW_H;
       const durationMin=(endMin!==null&&endMin>startMin)?(endMin-startMin):60;
       const heightPx=Math.max((durationMin/60)*ROW_H,18);
+      const c=couleurDonneur(ev.donneur);
       html+='<div class="tg-ev"'
-        +' style="top:'+topPx+'px;height:'+heightPx+'px;"'
+        +' style="top:'+topPx+'px;height:'+heightPx+'px;background:'+c.bg+';border-left:3px solid '+c.border+';"'
         +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
         +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+'">'
         +(ev.debut?ev.debut+' ':'')+(ev.client||'')
