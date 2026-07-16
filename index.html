@@ -490,6 +490,18 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
   const todayISO=fmtISO(new Date());
   let html='<div class="grid-wrapper"><div class="time-grid">';
 
+  const HEURE_OUVERTURE=8; // heure à laquelle la grille doit s'ouvrir par défaut
+
+function scrollGrilleVersHeure(heure){
+  const wrapper=document.querySelector('.grid-wrapper');
+  if(!wrapper)return;
+  const ROW_H=80; // doit correspondre à --row-h
+  const buffer=100; // espace laissé au-dessus (header + toolbar sticky)
+  const top=wrapper.getBoundingClientRect().top+window.scrollY;
+  const target=top+(heure*ROW_H)-buffer;
+  window.scrollTo({top:Math.max(target,0),behavior:'auto'});
+}
+
   // ---- Header ----
   html+='<div class="tg-header" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
   html+='<div class="tg-hcell timecol"></div>';
@@ -566,6 +578,7 @@ function renderSemaine(){
     7,'52px'
   );
   document.getElementById('vue-container').innerHTML=html;
+setTimeout(()=>scrollGrilleVersHeure(HEURE_OUVERTURE),0);
 }
 
 // ---- VUE JOUR ----
