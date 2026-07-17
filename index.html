@@ -502,6 +502,11 @@ function scrollGrilleVersHeure(heure){
   window.scrollTo({top:Math.max(target,0),behavior:'auto'});
 }
 
+  function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
+  const ROW_H=80; // px par heure — doit correspondre à --row-h
+  const todayISO=fmtISO(new Date());
+  let html='<div class="grid-wrapper"><div class="time-grid">';
+    
   // ---- Header ----
   html+='<div class="tg-header" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
   html+='<div class="tg-hcell timecol"></div>';
