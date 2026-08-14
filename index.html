@@ -248,7 +248,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin" step="1800"></div>
         <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
       </div>
-      <div class="form-field" id="champ-date-fin"><label>Date de fin (optionnel — pour créer plusieurs jours d'affilée, ex. vacances)</label><input type="date" id="f-date-fin"></div>
+      <div class="form-field" id="champ-date-fin"><label><input type="date" id="f-date-fin"></div>
       <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
       <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
       <div class="form-row-2">
@@ -261,7 +261,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <button class="btn-modifier" onclick="modifierIntervention()">✏ Modifier</button>
         <button class="btn-supprimer" onclick="supprimerIntervention()">🗑 Supprimer</button>
       </div>
-      <button class="btn-copier" id="btn-copier" onclick="copierIntervention()" style="display:none;">📋 Copier cette intervention</button>
+      <button class="btn-copier" id="btn-copier" onclick="copierIntervention()" style="display:none;">📋 Copier</button>
     </div>
   </div>
 </div>
