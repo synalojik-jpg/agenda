@@ -427,10 +427,11 @@ function couleurDonneur(donneur){
 // ---- LÉGENDE DONNEURS D'ORDRE ----
 function renderLegende(){
   const el=document.getElementById('legende-donneurs');
-  const donneurs=[...new Set(interventions.map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
+  const prefix=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
+  const donneurs=[...new Set(interventions.filter(i=>i.date&&i.date.startsWith(prefix)).map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
   let html='<span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d\'ordre :</span>';
   if(donneurs.length===0){
-    html+='<span style="font-size:.75rem;color:#9ca3af;">Aucun</span>';
+    html+='<span style="font-size:.75rem;color:#9ca3af;">Aucun ce mois-ci</span>';
   } else {
     donneurs.forEach(d=>{
       const c=couleurDonneur(d);
