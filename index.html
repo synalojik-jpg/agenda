@@ -248,11 +248,11 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin" step="1800"></div>
         <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
       </div>
-      <div class="form-field" id="champ-date-fin"><label>Date de fin</label><input type="date" id="f-date-fin"></div>
+      <div class="form-field" id="champ-date-fin"><label>Date de fin (optionnel — pour créer plusieurs jours d'affilée, ex. vacances)</label><input type="date" id="f-date-fin"></div>
       <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
       <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
       <div class="form-row-2">
-        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" placeholder="Donneur d'ordre"></div>
+        <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" list="liste-donneurs" placeholder="Donneur d'ordre" autocomplete="off"><datalist id="liste-donneurs"></datalist></div>
         <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
@@ -393,6 +393,27 @@ document.addEventListener('touchend',e=>{
 },{passive:true});
 
 
+// Liste fixe des donneurs d'ordre connus (proposés dans la liste déroulante,
+// et utilisés pour garantir des couleurs distinctes). Tu peux en ajouter/retirer ici.
+const DONNEURS_CONNUS = ['5COM','ADISTA','ANTIBUG','APPUITECH','ATI PC','BA2I','CONNEXX','DELTINFO',
+  'GC DEVELOPPEMENT','IAGONA','ISLO SERVICES','ITEC','LEMON GROUP','MA BUREAUTIQUE','MMF SERVICES',
+  'MY CONNECT','NEXT BUSINESS DAY','NOVA INTEGRATION','PRESTINFO MAINTENANCE','SMART MCL','VISIOSCREEN'];
+
+// Construit la liste des donneurs à proposer dans le champ (liste fixe + ceux déjà tapés dans l'historique)
+function listeDonneursDatalist(){
+  const map=new Map(); // clé = nom en MAJUSCULES (pour dédoublonner), valeur = libellé affiché
+  DONNEURS_CONNUS.forEach(d=>map.set(d,d));
+  interventions.forEach(i=>{
+    const d=(i.donneur||'').trim();
+    if(d && !map.has(d.toUpperCase())) map.set(d.toUpperCase(),d);
+  });
+  return [...map.values()].sort((a,b)=>a.localeCompare(b,'fr'));
+}
+function remplirDatalistDonneurs(){
+  document.getElementById('liste-donneurs').innerHTML=
+    listeDonneursDatalist().map(d=>'<option value="'+d.replace(/"/g,'&quot;')+'">').join('');
+}
+
 // Palette de couleurs bien différenciées pour les donneurs d'ordre
 const PALETTE_COULEURS = [
   {bg:'#e63946',border:'#c1121f'},  // rouge vif
@@ -412,6 +433,18 @@ const PALETTE_COULEURS = [
   {bg:'#f72585',border:'#b5006a'},  // rose flashy
   {bg:'#4cc9f0',border:'#1a9fcc'},  // bleu ciel
   {bg:'#7b2d00',border:'#4a1a00'},  // marron
+  {bg:'#9b5de5',border:'#6a2fa8'},  // violet clair
+  {bg:'#00bbf9',border:'#0088b5'},  // cyan
+  {bg:'#00f5d4',border:'#00b89f'},  // turquoise
+  {bg:'#ff9770',border:'#cc5a2e'},  // saumon
+  {bg:'#588157',border:'#31502f'},  // vert sauge
+  {bg:'#c9184a',border:'#8f0e33'},  // bordeaux
+  {bg:'#5390d9',border:'#2c62a3'},  // bleu acier
+  {bg:'#e07a5f',border:'#a8492e'},  // terracotta
+  {bg:'#84a98c',border:'#527060'},  // vert grisé
+  {bg:'#d62828',border:'#9c1c1c'},  // rouge sombre
+  {bg:'#3d348b',border:'#241f5c'},  // indigo
+  {bg:'#f9844a',border:'#c4602a'},  // orange doux
 ];
 
 function couleurDonneur(donneur){
@@ -419,10 +452,16 @@ function couleurDonneur(donneur){
     return{bg:'#1a3ed4',border:'#0f2490'};
   }
   const str=donneur.trim().toUpperCase();
-  let hash=0;
-  for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);}
-  const idx=Math.abs(hash)%PALETTE_COULEURS.length;
-  return PALETTE_COULEURS[idx];
+  // Les donneurs de la liste fixe ont une position dédiée -> couleur garantie unique entre eux
+  let idx=DONNEURS_CONNUS.indexOf(str);
+  if(idx===-1){
+    // Donneur hors liste : couleur stable par hash, dans les emplacements restants de la palette
+    let hash=0;
+    for(let i=0;i<str.length;i++){hash=str.charCodeAt(i)+((hash<<5)-hash);}
+    const reste=Math.max(1,PALETTE_COULEURS.length-DONNEURS_CONNUS.length);
+    idx=DONNEURS_CONNUS.length+(Math.abs(hash)%reste);
+  }
+  return PALETTE_COULEURS[idx%PALETTE_COULEURS.length];
 }
 // ---- LÉGENDE DONNEURS D'ORDRE ----
 function renderLegende(){
@@ -642,6 +681,7 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
   document.getElementById('formTitre').textContent=idx!==null?'Modifier intervention':'Nouvelle intervention';
   document.getElementById('btn-retour').style.display=avecRetour?'block':'none';
   viderForm();
+  remplirDatalistDonneurs();
   // Le champ "date de fin" (création de plage) n'a de sens qu'à la création
   document.getElementById('champ-date-fin').style.display=idx!==null?'none':'block';
   // Le bouton "Copier" n'a de sens qu'en modification d'une intervention existante
