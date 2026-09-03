@@ -517,7 +517,6 @@ function renderMois(){
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
     evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);html+='<div class="ev-chip" style="background:'+c.bg+';border-left:3px solid '+c.border+';">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
-    if(evs.length>2)html+='<div class="ev-plus">+'+( evs.length-2)+'</div>';
     html+='</div>';
   }
   html+='</div></div></div>';
@@ -740,7 +739,10 @@ async function collerIntervention(ds,heure){
 }
 
 // ---- ACTIONS ----
+let ajoutEnCours=false;
 async function ajouterIntervention(){
+  if(ajoutEnCours)return;
+  ajoutEnCours=true;
   const dateFin=document.getElementById('f-date-fin').value;
   const dateDebut=document.getElementById('f-date').value;
   if(dateFin&&dateDebut&&dateFin>dateDebut){
@@ -755,9 +757,17 @@ async function ajouterIntervention(){
       cur.setDate(cur.getDate()+1);
     }
   } else {
-    interventions.push(getFormData(Date.now().toString()));
+    const data=getFormData(Date.now().toString());
+    // Vérification doublon : même date, même heure de début, même client
+    const doublon=interventions.some(e=>e.date===data.date&&e.debut===data.debut&&e.client===data.client);
+    if(doublon&&!confirm('⚠️ Une intervention identique existe déjà à cette date et cette heure pour ce client.\n\nAjouter quand même ?')){
+      ajoutEnCours=false;
+      return;
+    }
+    interventions.push(data);
   }
   await sauvegarder();render();fermerForm();jourEnCours=null;
+  ajoutEnCours=false;
 }
 async function modifierIntervention(){if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}interventions[editIdx]=getFormData(interventions[editIdx].id);await sauvegarder();render();fermerForm();jourEnCours=null;}
 async function supprimerIntervention(){
