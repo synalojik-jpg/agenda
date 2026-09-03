@@ -48,6 +48,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .view-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;transition:all .15s;}
 .view-btn.active{background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;border-color:var(--bleu);}
 #btn-export{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+#btn-doublons{background:linear-gradient(135deg,#b45309,#f59e0b);color:#fff;border:none;padding:7px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-left:6px;}
 
 /* STATS */
 .stats{max-width:1100px;margin:10px auto;padding:0 12px;display:flex;gap:10px;}
@@ -207,6 +208,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
     <button class="view-btn" onclick="changerVue('jour')" id="vbtn-jour">Jour</button>
   </div>
   <button id="btn-export" onclick="exportCSVMois()">⬇ CSV</button>
+  <button id="btn-doublons" onclick="detecterDoublons()">⚠ Doublons</button>
 </div>
 
 <div class="stats">
@@ -781,6 +783,28 @@ async function supprimerIntervention(){
   interventions.splice(editIdx,1);
   editIdx=null;
   await sauvegarder();render();fermerForm();jourEnCours=null;
+}
+
+// ---- DÉTECTION DES DOUBLONS EXISTANTS ----
+function detecterDoublons(){
+  const groupes={};
+  interventions.forEach(ev=>{
+    const cle=(ev.date||'')+'|'+(ev.debut||'')+'|'+(ev.client||'').trim().toLowerCase();
+    if(!groupes[cle])groupes[cle]=[];
+    groupes[cle].push(ev);
+  });
+  const doublons=Object.values(groupes).filter(g=>g.length>1);
+  if(doublons.length===0){
+    alert('✔ Aucun doublon détecté.');
+    return;
+  }
+  let msg='⚠ '+doublons.length+' groupe(s) d\'interventions en double détecté(s) :\n\n';
+  doublons.forEach(g=>{
+    const ex=g[0];
+    msg+='• '+ex.date+' '+( ex.debut||'?')+' — '+( ex.client||'(sans client)')+'  ('+g.length+' fois)\n';
+  });
+  msg+='\nClique sur un jour concerné dans le calendrier pour ouvrir et supprimer les entrées en trop.';
+  alert(msg);
 }
 
 // ---- EXPORT ----
