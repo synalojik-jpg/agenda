@@ -63,7 +63,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-day-names{display:grid;grid-template-columns:repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
 .cal-body{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;overflow:auto;padding:3px;cursor:pointer;position:relative;}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;overflow:visible;padding:3px;cursor:pointer;position:relative;}
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
@@ -73,6 +73,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ev-chip{display:block;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:15px;line-height:15px;max-width:100%;}
 .ev-plus{font-size:.6rem;color:var(--bleu);font-weight:600;padding-left:2px;white-space:nowrap;}
+.ev-chip.en-attente,.tg-ev.en-attente{opacity:.62;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px);outline:1px dashed rgba(255,255,255,.95);outline-offset:-2px;}
 
 /* GRILLE HORAIRE */
 .grid-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;overflow-x:auto;}
@@ -140,6 +141,11 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .day-item-client{font-weight:600;font-size:.9rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .day-item-detail{font-size:.75rem;color:var(--muted);}
 .day-item-tarif{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--bleu);white-space:nowrap;flex-shrink:0;}
+.day-item.en-attente{border-style:dashed;background:#fff8ec;}
+.badge-attente{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.form-field.check-field{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.form-field.check-field input[type="checkbox"]{width:auto;accent-color:var(--bleu);}
+.form-field.check-field label{margin-bottom:0;text-transform:none;font-size:.8rem;}
 .btn-nouvelle{width:100%;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;border:none;padding:10px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
 
 /* Formulaire */
@@ -258,6 +264,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-valide" checked><label for="f-valide">Intervention validée (décocher = en attente)</label></div>
       <div class="btn-row">
         <button class="btn-ajouter" onclick="ajouterIntervention()">✔ Ajouter</button>
         <button class="btn-modifier" onclick="modifierIntervention()">✏ Modifier</button>
@@ -518,7 +525,7 @@ function renderMois(){
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);html+='<div class="ev-chip" style="background:'+c.bg+';border-left:3px solid '+c.border+';">'+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+'" style="background-color:'+c.bg+';border-left:3px solid '+c.border+';">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
@@ -598,11 +605,12 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
       const durationMin=(endMin!==null&&endMin>startMin)?(endMin-startMin):60;
       const heightPx=Math.max((durationMin/60)*ROW_H,18);
       const c=couleurDonneur(ev.donneur);
-      html+='<div class="tg-ev"'
-        +' style="top:'+topPx+'px;height:'+heightPx+'px;background:'+c.bg+';border-left:3px solid '+c.border+';"'
+      const enAttente=ev.valide===false;
+      html+='<div class="tg-ev'+(enAttente?' en-attente':'')+'"'
+        +' style="top:'+topPx+'px;height:'+heightPx+'px;background-color:'+c.bg+';border-left:3px solid '+c.border+';"'
         +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
-        +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+'">'
-        +(ev.debut?ev.debut+' ':'')+(ev.client||'')
+        +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+(enAttente?' · EN ATTENTE':'')+'">'
+        +(enAttente?'⏳ ':'')+(ev.debut?ev.debut+' ':'')+(ev.client||'')
         +'</div>';
     });
 
@@ -664,9 +672,10 @@ function ouvrirListe(ds){
   const evs=interventions.filter(e=>e.date===ds);
   let html='';
   evs.forEach(ev=>{
-    html+='<div class="day-item" onclick="ouvrirEv(\''+ev.id+'\')">';
+    const enAttente=ev.valide===false;
+    html+='<div class="day-item'+(enAttente?' en-attente':'')+'" onclick="ouvrirEv(\''+ev.id+'\')">';
     html+='<div class="day-item-left">';
-    html+='<div class="day-item-client">'+(ev.client||'—')+'</div>';
+    html+='<div class="day-item-client">'+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
     html+='<div class="day-item-detail">'+(ev.debut||'')+( ev.fin?' → '+ev.fin:'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';
     html+='</div><div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div></div>';
   });
@@ -698,6 +707,7 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
     document.getElementById('f-donneur').value=i.donneur||'';
     document.getElementById('f-numero').value=i.numero||'';
     document.getElementById('f-tarif').value=i.tarif||'';
+    document.getElementById('f-valide').checked=(i.valide!==false);
   } else {
     if(ds)document.getElementById('f-date').value=ds;
     if(heure)document.getElementById('f-debut').value=heure;
@@ -713,9 +723,9 @@ function ouvrirEv(id){
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
-function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');}
+function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=true;}
 function getFormData(id){
-  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value};
+  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:document.getElementById('f-valide').checked};
 }
 
 // ---- COPIER / COLLER ----
@@ -723,7 +733,7 @@ function copierIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   const i=interventions[editIdx];
   // On copie tout sauf l'id et la date (qui seront redéfinis à chaque collage)
-  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||''};
+  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false};
   document.getElementById('clipboard-banner').classList.add('visible');
   fermerForm();
   jourEnCours=null;
@@ -734,7 +744,7 @@ function annulerCopie(){
 }
 async function collerIntervention(ds,heure){
   if(!clipboardEv)return;
-  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||''};
+  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false};
   interventions.push(nouvelle);
   await sauvegarder();
   render();
