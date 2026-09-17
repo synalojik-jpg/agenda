@@ -73,7 +73,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ev-chip{display:block;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:15px;line-height:15px;max-width:100%;}
 .ev-plus{font-size:.6rem;color:var(--bleu);font-weight:600;padding-left:2px;white-space:nowrap;}
-.ev-chip.en-attente,.tg-ev.en-attente{opacity:.62;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px);outline:1px dashed rgba(255,255,255,.95);outline-offset:-2px;}
+.ev-chip.en-attente,.tg-ev.en-attente{opacity:.72;outline:1px dashed rgba(255,255,255,.95);outline-offset:-2px;}
 
 /* GRILLE HORAIRE */
 .grid-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;overflow-x:auto;}
@@ -525,7 +525,7 @@ function renderMois(){
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     const evs=interventions.filter(e=>e.date===ds);
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+'" style="background-color:'+c.bg+';border-left:3px solid '+c.border+';">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
@@ -606,8 +606,9 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
       const heightPx=Math.max((durationMin/60)*ROW_H,18);
       const c=couleurDonneur(ev.donneur);
       const enAttente=ev.valide===false;
+      const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;
       html+='<div class="tg-ev'+(enAttente?' en-attente':'')+'"'
-        +' style="top:'+topPx+'px;height:'+heightPx+'px;background-color:'+c.bg+';border-left:3px solid '+c.border+';"'
+        +' style="top:'+topPx+'px;height:'+heightPx+'px;background:'+bg+';border-left:3px solid '+c.border+';"'
         +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
         +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+(enAttente?' · EN ATTENTE':'')+'">'
         +(enAttente?'⏳ ':'')+(ev.debut?ev.debut+' ':'')+(ev.client||'')
