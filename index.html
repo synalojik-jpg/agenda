@@ -71,9 +71,10 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-cell.today{background:linear-gradient(135deg,#eef1ff,#f5f0ff);border-left:3px solid var(--bleu);}
 .cal-cell.today .num-jour{background:linear-gradient(135deg,var(--bleu),var(--rouge));color:#fff;border-radius:50%;}
 .num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.ev-chip{display:block;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:15px;line-height:15px;max-width:100%;}
+.ev-chip{display:block;position:relative;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:17px;line-height:17px;max-width:100%;}
 .ev-plus{font-size:.6rem;color:var(--bleu);font-weight:600;padding-left:2px;white-space:nowrap;}
-.ev-chip.en-attente,.tg-ev.en-attente{opacity:.72;outline:1px dashed rgba(255,255,255,.95);outline-offset:-2px;}
+.ev-chip.en-attente,.tg-ev.en-attente{opacity:.9;outline:1px dashed rgba(255,255,255,.95);outline-offset:-2px;}
+.ev-chip.colis::after,.tg-ev.colis::after{content:'📦';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;opacity:.65;pointer-events:none;text-shadow:0 0 2px rgba(0,0,0,.3);}
 
 /* GRILLE HORAIRE */
 .grid-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;overflow-x:auto;}
@@ -143,9 +144,11 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .day-item-tarif{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--bleu);white-space:nowrap;flex-shrink:0;}
 .day-item.en-attente{border-style:dashed;background:#fff8ec;}
 .badge-attente{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;}
-.form-field.check-field{display:flex;align-items:center;gap:8px;margin-top:4px;}
-.form-field.check-field input[type="checkbox"]{width:auto;accent-color:var(--bleu);}
-.form-field.check-field label{margin-bottom:0;text-transform:none;font-size:.8rem;}
+.form-field.check-field{display:flex;align-items:center;gap:10px;margin-top:6px;}
+.form-field.check-field input[type="checkbox"]{-webkit-appearance:none;appearance:none;width:26px;height:26px;min-width:26px;border:2px solid var(--bleu);border-radius:6px;background:#fff;position:relative;cursor:pointer;flex-shrink:0;margin:0;}
+.form-field.check-field input[type="checkbox"]:checked{background:var(--bleu);border-color:var(--bleu);}
+.form-field.check-field input[type="checkbox"]:checked::after{content:'';position:absolute;left:8px;top:3px;width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg);}
+.form-field.check-field label{margin-bottom:0;text-transform:none;font-size:.85rem;}
 .btn-nouvelle{width:100%;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;border:none;padding:10px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
 
 /* Formulaire */
@@ -264,7 +267,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-valide" checked><label for="f-valide">Intervention validée (décocher = en attente)</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente (pas encore validée)</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-colis"><label for="f-colis">📦 Retrait colis chez transporteur</label></div>
       <div class="btn-row">
         <button class="btn-ajouter" onclick="ajouterIntervention()">✔ Ajouter</button>
         <button class="btn-modifier" onclick="modifierIntervention()">✏ Modifier</button>
@@ -286,9 +290,7 @@ const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 
 // ---- AUTH ----
-window.addEventListener('load',()=>{
-  const local=localStorage.getItem('synalojik_v2');
-  if(local){interventions=JSON.parse(local);render();}
+function demarrerAuthGoogle(){
   gapi.load('client',async()=>{
     await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
     tokenClient=google.accounts.oauth2.initTokenClient({
@@ -305,6 +307,19 @@ window.addEventListener('load',()=>{
     });
     tokenClient.requestAccessToken({prompt:''});
   });
+}
+window.addEventListener('load',()=>{
+  const local=localStorage.getItem('synalojik_v2');
+  if(local){interventions=JSON.parse(local);render();}
+  if(navigator.onLine){
+    demarrerAuthGoogle();
+  } else {
+    const s=document.getElementById('statut');
+    if(s){s.className='';s.innerHTML='<span class="dot"></span><span>Hors ligne</span>';}
+  }
+});
+window.addEventListener('online',()=>{
+  if(!accessToken)demarrerAuthGoogle();
 });
 function demanderConnexion(){tokenClient.requestAccessToken({prompt:'consent'});}
 function deconnecter(){
@@ -524,8 +539,8 @@ function renderMois(){
     // Clic → vue jour de ce jour
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
-    const evs=interventions.filter(e=>e.date===ds);
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
@@ -558,6 +573,7 @@ function handleSlotClick(ds,heure){
 
 function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
   const ROW_H=80; // px par heure — doit correspondre à --row-h
+  const HEURE_DEBUT=7, HEURE_FIN=19; // plage horaire affichée (7h à 19h)
   const todayISO=fmtISO(new Date());
   let html='<div class="grid-wrapper"><div class="time-grid">';
 
@@ -572,7 +588,7 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
 
   // --- Colonne des heures ---
   html+='<div>';
-  for(let h=0;h<24;h++){
+  for(let h=HEURE_DEBUT;h<HEURE_FIN;h++){
     html+='<div class="tg-row" style="grid-template-columns:unset;">';
     html+='<div class="time-label" style="height:'+ROW_H+'px;"><span>'+fmtH(h)+'</span></div>';
     html+='</div>';
@@ -587,8 +603,8 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
 
     html+='<div class="tg-col-body" style="position:relative;">';
 
-    // Lignes de fond (24 rangées cliquables)
-    for(let h=0;h<24;h++){
+    // Lignes de fond (rangées cliquables, 7h à 19h)
+    for(let h=HEURE_DEBUT;h<HEURE_FIN;h++){
       html+='<div class="tg-row" style="grid-template-columns:unset;">';
       html+='<div class="tg-cell'+(isToday?' today-cell':'')+'"'
         +' style="height:'+ROW_H+'px;border-right:none;"'
@@ -597,17 +613,22 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
     }
 
     // Événements en position absolue
+    const gridStartMin=HEURE_DEBUT*60, gridEndMin=HEURE_FIN*60;
     evsDuJour.forEach(ev=>{
       const startMin=toMin(ev.debut);
       const endMin=toMin(ev.fin);
       if(startMin===null)return;
-      const topPx=(startMin/60)*ROW_H;
-      const durationMin=(endMin!==null&&endMin>startMin)?(endMin-startMin):60;
-      const heightPx=Math.max((durationMin/60)*ROW_H,18);
+      const finMin=(endMin!==null&&endMin>startMin)?endMin:startMin+60;
+      let topPx=((startMin-gridStartMin)/60)*ROW_H;
+      let bottomPx=((finMin-gridStartMin)/60)*ROW_H;
+      topPx=Math.max(0,topPx);
+      bottomPx=Math.min((HEURE_FIN-HEURE_DEBUT)*ROW_H,bottomPx);
+      const heightPx=Math.max(bottomPx-topPx,18);
       const c=couleurDonneur(ev.donneur);
       const enAttente=ev.valide===false;
+      const colis=!!ev.colis;
       const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;
-      html+='<div class="tg-ev'+(enAttente?' en-attente':'')+'"'
+      html+='<div class="tg-ev'+(enAttente?' en-attente':'')+(colis?' colis':'')+'"'
         +' style="top:'+topPx+'px;height:'+heightPx+'px;background:'+bg+';border-left:3px solid '+c.border+';"'
         +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
         +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+(enAttente?' · EN ATTENTE':'')+'">'
@@ -670,13 +691,14 @@ function ouvrirListe(ds){
   jourEnCours=ds;
   const date=new Date(ds+'T12:00:00');
   document.getElementById('listeTitre').textContent=date.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-  const evs=interventions.filter(e=>e.date===ds);
+  const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
   let html='';
   evs.forEach(ev=>{
     const enAttente=ev.valide===false;
+    const colis=!!ev.colis;
     html+='<div class="day-item'+(enAttente?' en-attente':'')+'" onclick="ouvrirEv(\''+ev.id+'\')">';
     html+='<div class="day-item-left">';
-    html+='<div class="day-item-client">'+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
+    html+='<div class="day-item-client">'+(colis?'📦 ':'')+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
     html+='<div class="day-item-detail">'+(ev.debut||'')+( ev.fin?' → '+ev.fin:'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';
     html+='</div><div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div></div>';
   });
@@ -708,7 +730,8 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
     document.getElementById('f-donneur').value=i.donneur||'';
     document.getElementById('f-numero').value=i.numero||'';
     document.getElementById('f-tarif').value=i.tarif||'';
-    document.getElementById('f-valide').checked=(i.valide!==false);
+    document.getElementById('f-valide').checked=(i.valide===false);
+    document.getElementById('f-colis').checked=!!i.colis;
   } else {
     if(ds)document.getElementById('f-date').value=ds;
     if(heure)document.getElementById('f-debut').value=heure;
@@ -724,9 +747,9 @@ function ouvrirEv(id){
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
-function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=true;}
+function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;}
 function getFormData(id){
-  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:document.getElementById('f-valide').checked};
+  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked};
 }
 
 // ---- COPIER / COLLER ----
@@ -734,7 +757,7 @@ function copierIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   const i=interventions[editIdx];
   // On copie tout sauf l'id et la date (qui seront redéfinis à chaque collage)
-  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false};
+  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false,colis:!!i.colis};
   document.getElementById('clipboard-banner').classList.add('visible');
   fermerForm();
   jourEnCours=null;
@@ -745,7 +768,7 @@ function annulerCopie(){
 }
 async function collerIntervention(ds,heure){
   if(!clipboardEv)return;
-  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false};
+  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false,colis:!!clipboardEv.colis};
   interventions.push(nouvelle);
   await sauvegarder();
   render();
