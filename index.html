@@ -82,6 +82,9 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .tg-header{display:grid;border-bottom:2px solid var(--border);}
 .tg-hcell{background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));color:#fff;text-align:center;padding:8px 4px;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
 .tg-hcell.timecol{background:#f8f9ff;color:var(--muted);font-size:.7rem;border-right:1px solid var(--border);}
+.tg-allday{border-bottom:2px solid var(--border);background:#f8f9ff;}
+.tg-allday-cell{min-height:20px;min-width:0;padding:2px 3px;border-right:1px solid var(--border);box-sizing:border-box;}
+.ev-chip.journee-chip{white-space:normal;height:auto;line-height:1.3;padding:2px 5px;}
 .tg-hcell.today-col{background:linear-gradient(135deg,var(--rouge),var(--rouge-clair));}
 
 /* Lignes : 1 ligne = 1 heure (80px), trait demi-heure en pointillé via pseudo-élément */
@@ -259,7 +262,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>Heure fin</label><input type="time" id="f-fin" step="1800"></div>
         <div class="form-field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
       </div>
-      <div class="form-field" id="champ-date-fin"><label>Date de fin (optionnel — pour créer plusieurs jours d'affilée, ex. vacances)</label><input type="date" id="f-date-fin"></div>
+      <div class="form-field" id="champ-date-fin"><label>Date de fin</label><input type="date" id="f-date-fin"></div>
       <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
       <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
       <div class="form-row-2">
@@ -267,6 +270,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-journee"><label for="f-journee">📅 Toute la journée (pas d'heure)</label></div>
       <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente (pas encore validée)</label></div>
       <div class="form-field check-field"><input type="checkbox" id="f-colis"><label for="f-colis">📦 Retrait colis chez transporteur</label></div>
       <div class="btn-row">
@@ -539,8 +543,11 @@ function renderMois(){
     // Clic → vue jour de ce jour
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
-    const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>{
+      if(!!a.journee!==!!b.journee)return a.journee?-1:1; // les "toute la journée" en premier
+      return (a.debut||'').localeCompare(b.debut||'');
+    });
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const journee=!!ev.journee;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+(journee?' journee-chip':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+(journee?'📅 ':(ev.debut?ev.debut+' ':''))+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
@@ -583,6 +590,33 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
   cols.forEach((c,i)=>{html+='<div class="tg-hcell '+getColClass(c,i)+'">'+getColHeader(c,i)+'</div>';});
   html+='</div>';
 
+  // ---- Bandeau "toute la journée" (comme un agenda classique) ----
+  const colsInfo=cols.map((c,i)=>{
+    const ds=typeof c==='string'?c:fmtISO(c);
+    return {ds, journeeEvs:interventions.filter(e=>e.date===ds&&e.journee)};
+  });
+  const aUneJournee=colsInfo.some(c=>c.journeeEvs.length>0);
+  if(aUneJournee){
+    html+='<div class="tg-allday" style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);">';
+    html+='<div class="tg-hcell timecol"></div>';
+    colsInfo.forEach(({ds,journeeEvs})=>{
+      html+='<div class="tg-allday-cell">';
+      journeeEvs.forEach(ev=>{
+        const c=couleurDonneur(ev.donneur);
+        const enAttente=ev.valide===false;
+        const colis=!!ev.colis;
+        const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;
+        html+='<div class="ev-chip journee-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+'"'
+          +' style="background:'+bg+';border-left:3px solid '+c.border+';"'
+          +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'
+          +(enAttente?'⏳ ':'')+'📅 '+(ev.client||'')
+          +'</div>';
+      });
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
   // ---- Corps : wrapper position:relative pour les événements absolus ----
   html+='<div style="display:grid;grid-template-columns:'+colWidth+' repeat('+nbCols+',1fr);position:relative;">';
 
@@ -599,7 +633,7 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
   cols.forEach((c,i)=>{
     const ds=typeof c==='string'?c:fmtISO(c);
     const isToday=ds===todayISO;
-    const evsDuJour=interventions.filter(e=>e.date===ds);
+    const evsDuJour=interventions.filter(e=>e.date===ds&&!e.journee);
 
     html+='<div class="tg-col-body" style="position:relative;">';
 
@@ -691,15 +725,19 @@ function ouvrirListe(ds){
   jourEnCours=ds;
   const date=new Date(ds+'T12:00:00');
   document.getElementById('listeTitre').textContent=date.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-  const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
+  const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>{
+    if(!!a.journee!==!!b.journee)return a.journee?-1:1;
+    return (a.debut||'').localeCompare(b.debut||'');
+  });
   let html='';
   evs.forEach(ev=>{
     const enAttente=ev.valide===false;
     const colis=!!ev.colis;
+    const journee=!!ev.journee;
     html+='<div class="day-item'+(enAttente?' en-attente':'')+'" onclick="ouvrirEv(\''+ev.id+'\')">';
     html+='<div class="day-item-left">';
-    html+='<div class="day-item-client">'+(colis?'📦 ':'')+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
-    html+='<div class="day-item-detail">'+(ev.debut||'')+( ev.fin?' → '+ev.fin:'')+( ev.adresse?' · '+ev.adresse:'')+'</div>';
+    html+='<div class="day-item-client">'+(colis?'📦 ':'')+(journee?'📅 ':'')+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
+    html+='<div class="day-item-detail">'+(journee?'Toute la journée':(ev.debut||'')+( ev.fin?' → '+ev.fin:''))+( ev.adresse?' · '+ev.adresse:'')+'</div>';
     html+='</div><div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div></div>';
   });
   document.getElementById('dayList').innerHTML=html;
@@ -732,6 +770,7 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
     document.getElementById('f-tarif').value=i.tarif||'';
     document.getElementById('f-valide').checked=(i.valide===false);
     document.getElementById('f-colis').checked=!!i.colis;
+    document.getElementById('f-journee').checked=!!i.journee;
   } else {
     if(ds)document.getElementById('f-date').value=ds;
     if(heure)document.getElementById('f-debut').value=heure;
@@ -747,9 +786,9 @@ function ouvrirEv(id){
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
-function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;}
+function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;}
 function getFormData(id){
-  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked};
+  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked,journee:document.getElementById('f-journee').checked};
 }
 
 // ---- COPIER / COLLER ----
@@ -757,7 +796,7 @@ function copierIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   const i=interventions[editIdx];
   // On copie tout sauf l'id et la date (qui seront redéfinis à chaque collage)
-  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false,colis:!!i.colis};
+  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false,colis:!!i.colis,journee:!!i.journee};
   document.getElementById('clipboard-banner').classList.add('visible');
   fermerForm();
   jourEnCours=null;
@@ -768,7 +807,7 @@ function annulerCopie(){
 }
 async function collerIntervention(ds,heure){
   if(!clipboardEv)return;
-  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false,colis:!!clipboardEv.colis};
+  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false,colis:!!clipboardEv.colis,journee:!!clipboardEv.journee};
   interventions.push(nouvelle);
   await sauvegarder();
   render();
