@@ -70,6 +70,9 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-cell.autre-mois .num-jour{color:#ccc;}
 .cal-cell.today{background:linear-gradient(135deg,#eef1ff,#f5f0ff);border-left:3px solid var(--bleu);}
 .cal-cell.today .num-jour{background:linear-gradient(135deg,var(--bleu),var(--rouge));color:#fff;border-radius:50%;}
+.cal-cell.journee-day{color:#fff;}
+.cal-cell.journee-day .num-jour{background:rgba(255,255,255,.3);border-radius:50%;color:#fff;}
+.journee-label{font-size:.62rem;font-weight:700;line-height:1.25;margin-bottom:2px;white-space:normal;overflow-wrap:break-word;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,.3);}
 .num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ev-chip{display:block;position:relative;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:17px;line-height:17px;max-width:100%;}
 .ev-plus{font-size:.6rem;color:var(--bleu);font-weight:600;padding-left:2px;white-space:nowrap;}
@@ -540,14 +543,25 @@ function renderMois(){
     const ds=fmtISO(date);
     const isThisMonth=date.getMonth()===month;
     const isToday=ds===todayISO;
+    // Inter(s) "toute la journée" ce jour-là → la couleur du donneur remplit toute la case
+    const journeeEvs=interventions.filter(e=>e.date===ds&&e.journee);
+    let celStyle='';
+    if(journeeEvs.length>0){
+      const jc=couleurDonneur(journeeEvs[0].donneur);
+      const jEnAttente=journeeEvs[0].valide===false;
+      const jbg=jEnAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jc.bg:jc.bg;
+      celStyle=' style="background:'+jbg+';"';
+    }
     // Clic → vue jour de ce jour
-    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+'" onclick="handleDayClick(\''+ds+'\')">';
+    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
-    const evs=interventions.filter(e=>e.date===ds).sort((a,b)=>{
-      if(!!a.journee!==!!b.journee)return a.journee?-1:1; // les "toute la journée" en premier
-      return (a.debut||'').localeCompare(b.debut||'');
+    journeeEvs.forEach(jev=>{
+      html+='<div class="journee-label" onclick="event.stopPropagation();ouvrirEv(\''+jev.id+'\')">'
+        +(jev.valide===false?'⏳ ':'')+(jev.colis?'📦 ':'')+'📅 '+(jev.client||'')
+        +'</div>';
     });
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const journee=!!ev.journee;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+(journee?' journee-chip':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+(journee?'📅 ':(ev.debut?ev.debut+' ':''))+( ev.client||'')+'</div>';});
+    const evs=interventions.filter(e=>e.date===ds&&!e.journee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
