@@ -72,6 +72,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-cell.today .num-jour{background:linear-gradient(135deg,var(--bleu),var(--rouge));color:#fff;border-radius:50%;}
 .cal-cell.journee-day{color:#fff;}
 .cal-cell.journee-day .num-jour{background:rgba(255,255,255,.3);border-radius:50%;color:#fff;}
+.cal-cell.demi-matin .num-jour{background:rgba(255,255,255,.35);border-radius:50%;color:#fff;}
 .journee-label{font-size:.62rem;font-weight:700;line-height:1.25;margin-bottom:2px;white-space:normal;overflow-wrap:break-word;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,.3);}
 .num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ev-chip{display:block;position:relative;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:17px;line-height:17px;max-width:100%;}
@@ -233,9 +234,9 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 
 <div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d'ordre :</span></div>
 <div id="liens-suivi" style="max-width:1100px;margin:0 auto 12px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;">
-  <a href="https://www.tnt.fr/public/suivi_colis/recherche/index.do" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 TNT</a>
-  <a href="https://www.chronopost.fr/fr/suivi-colis" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 CHRONOPOST</a>
-  <a href="http://lmline.lm2s.fr/login" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 LM2S</a>
+  <a href="https://www.tnt.fr/public/suivi_colis/recherche/index.do" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 Suivi TNT</a>
+  <a href="https://www.chronopost.fr/fr/suivi-colis" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 Suivi Chronopost</a>
+  <a href="http://lmline.lm2s.fr/technicien_pudo" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 LM2S Technicien</a>
 </div>
 <div id="vue-container"></div>
 
@@ -279,6 +280,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
       <div class="form-field check-field"><input type="checkbox" id="f-journee"><label for="f-journee">📅 Toute la journée (pas d'heure)</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-demi-journee"><label for="f-demi-journee">🌗 Demi-journée (garde l'heure de début)</label></div>
       <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente (pas encore validée)</label></div>
       <div class="form-field check-field"><input type="checkbox" id="f-colis"><label for="f-colis">📦 Retrait colis chez transporteur</label></div>
       <div class="btn-row">
@@ -551,14 +553,28 @@ function renderMois(){
     // Inter(s) "toute la journée" ce jour-là → la couleur du donneur remplit toute la case
     const journeeEvs=interventions.filter(e=>e.date===ds&&e.journee);
     let celStyle='';
+    let demiClass='';
     if(journeeEvs.length>0){
       const jc=couleurDonneur(journeeEvs[0].donneur);
       const jEnAttente=journeeEvs[0].valide===false;
       const jbg=jEnAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jc.bg:jc.bg;
       celStyle=' style="background:'+jbg+';"';
+    } else {
+      // Inter "demi-journée" → la moitié (matin ou aprem, selon l'heure de début) prend la couleur du donneur
+      const demiEv=interventions.find(e=>e.date===ds&&e.demiJournee);
+      if(demiEv){
+        const dc=couleurDonneur(demiEv.donneur);
+        const startMin=toMin(demiEv.debut);
+        const isMatin=(startMin===null)||startMin<13*60;
+        const grad=isMatin
+          ?'linear-gradient(to bottom,'+dc.bg+' 0%,'+dc.bg+' 50%,transparent 50%,transparent 100%)'
+          :'linear-gradient(to top,'+dc.bg+' 0%,'+dc.bg+' 50%,transparent 50%,transparent 100%)';
+        celStyle=' style="background:'+grad+';"';
+        demiClass=isMatin?' demi-matin':' demi-aprem';
+      }
     }
     // Clic → vue jour de ce jour
-    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
+    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     journeeEvs.forEach(jev=>{
       html+='<div class="journee-label" onclick="event.stopPropagation();ouvrirEv(\''+jev.id+'\')">'
@@ -790,6 +806,7 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
     document.getElementById('f-valide').checked=(i.valide===false);
     document.getElementById('f-colis').checked=!!i.colis;
     document.getElementById('f-journee').checked=!!i.journee;
+    document.getElementById('f-demi-journee').checked=!!i.demiJournee;
   } else {
     if(ds)document.getElementById('f-date').value=ds;
     if(heure)document.getElementById('f-debut').value=heure;
@@ -805,9 +822,9 @@ function ouvrirEv(id){
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
-function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;}
+function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;document.getElementById('f-demi-journee').checked=false;}
 function getFormData(id){
-  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked,journee:document.getElementById('f-journee').checked};
+  return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked,journee:document.getElementById('f-journee').checked,demiJournee:document.getElementById('f-demi-journee').checked};
 }
 
 // ---- COPIER / COLLER ----
@@ -815,7 +832,7 @@ function copierIntervention(){
   if(editIdx===null){alert('Aucune intervention sélectionnée.');return;}
   const i=interventions[editIdx];
   // On copie tout sauf l'id et la date (qui seront redéfinis à chaque collage)
-  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false,colis:!!i.colis,journee:!!i.journee};
+  clipboardEv={debut:i.debut||'',fin:i.fin||'',client:i.client||'',adresse:i.adresse||'',descriptif:i.descriptif||'',donneur:i.donneur||'',numero:i.numero||'',tarif:i.tarif||'',valide:i.valide!==false,colis:!!i.colis,journee:!!i.journee,demiJournee:!!i.demiJournee};
   document.getElementById('clipboard-banner').classList.add('visible');
   fermerForm();
   jourEnCours=null;
@@ -826,7 +843,7 @@ function annulerCopie(){
 }
 async function collerIntervention(ds,heure){
   if(!clipboardEv)return;
-  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false,colis:!!clipboardEv.colis,journee:!!clipboardEv.journee};
+  const nouvelle={id:Date.now().toString()+Math.random().toString(36).slice(2,6),date:ds,debut:heure||clipboardEv.debut||'',fin:clipboardEv.fin||'',client:clipboardEv.client||'',adresse:clipboardEv.adresse||'',descriptif:clipboardEv.descriptif||'',donneur:clipboardEv.donneur||'',numero:clipboardEv.numero||'',tarif:clipboardEv.tarif||'',valide:clipboardEv.valide!==false,colis:!!clipboardEv.colis,journee:!!clipboardEv.journee,demiJournee:!!clipboardEv.demiJournee};
   interventions.push(nouvelle);
   await sauvegarder();
   render();
