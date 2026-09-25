@@ -52,10 +52,15 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 
 /* STATS */
 .stats{max-width:1100px;margin:10px auto;padding:0 12px;display:flex;gap:10px;}
-.stat-card{flex:1;background:#fff;border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow);border-left:4px solid var(--bleu);}
+.stat-card{flex:1;background:#fff;border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow);border-left:4px solid var(--bleu);display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;}
+.stat-main{min-width:0;}
+.stat-annuel{text-align:right;flex-shrink:0;padding-left:4px;border-left:1px solid var(--border);}
+.stat-annuel-label{font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:600;white-space:nowrap;}
+.stat-annuel-value{font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;color:var(--text);white-space:nowrap;}
+.stat-card{padding:10px 12px;}
 .stat-card.rouge{border-left-color:var(--rouge);}
 .stat-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:2px;}
-.stat-value{font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;color:var(--text);}
+.stat-value{font-family:'Rajdhani',sans-serif;font-size:1.25rem;font-weight:700;color:var(--text);white-space:nowrap;}
 
 /* VUE MOIS */
 .cal-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;}
@@ -67,12 +72,16 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
+.cal-cell.weekend{background:#f1f8f2;}
 .cal-cell.autre-mois .num-jour{color:#ccc;}
 .cal-cell.today{background:linear-gradient(135deg,#eef1ff,#f5f0ff);border-left:3px solid var(--bleu);}
 .cal-cell.today .num-jour{background:linear-gradient(135deg,var(--bleu),var(--rouge));color:#fff;border-radius:50%;}
 .cal-cell.journee-day{color:#fff;}
 .cal-cell.journee-day .num-jour{background:rgba(255,255,255,.3);border-radius:50%;color:#fff;}
 .cal-cell.demi-matin .num-jour{background:rgba(255,255,255,.35);border-radius:50%;color:#fff;}
+.cal-cell.journee-day.passee,.cal-cell.journee-day.passee .journee-label{color:#4b5563;text-shadow:none;}
+.cal-cell.journee-day.passee .num-jour,.cal-cell.demi-matin.passee .num-jour{background:rgba(0,0,0,.08);color:#4b5563;}
+.ev-chip.passee,.tg-ev.passee{color:#4b5563;text-shadow:none;}
 .journee-label{font-size:.62rem;font-weight:700;line-height:1.25;margin-bottom:2px;white-space:normal;overflow-wrap:break-word;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,.3);}
 .num-jour{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ev-chip{display:block;position:relative;font-size:.6rem;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(135deg,var(--bleu),#3a5ef0);color:#fff;height:17px;line-height:17px;max-width:100%;}
@@ -228,15 +237,21 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 </div>
 
 <div class="stats">
-  <div class="stat-card"><div class="stat-label">Interventions ce mois</div><div class="stat-value" id="stat-count">0</div></div>
-  <div class="stat-card rouge"><div class="stat-label">Total mensuel</div><div class="stat-value" id="stat-total">0 €</div></div>
+  <div class="stat-card">
+    <div class="stat-main"><div class="stat-label">Interventions ce mois</div><div class="stat-value" id="stat-count">0</div></div>
+    <div class="stat-annuel"><div class="stat-annuel-label">Total annuel</div><div class="stat-annuel-value" id="stat-count-annuel">0</div></div>
+  </div>
+  <div class="stat-card rouge">
+    <div class="stat-main"><div class="stat-label">Total mensuel</div><div class="stat-value" id="stat-total">0 €</div></div>
+    <div class="stat-annuel"><div class="stat-annuel-label">Total annuel</div><div class="stat-annuel-value" id="stat-total-annuel">0 €</div></div>
+  </div>
 </div>
 
 <div id="legende-donneurs" style="max-width:1100px;margin:0 auto 10px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d'ordre :</span></div>
 <div id="liens-suivi" style="max-width:1100px;margin:0 auto 12px;padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;">
-  <a href="https://www.tnt.fr/public/suivi_colis/recherche/index.do" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 TNT</a>
-  <a href="https://www.chronopost.fr/fr/suivi-colis" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 CHRONOPOST</a>
-  <a href="http://lmline.lm2s.fr/technicien_pudo" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 LM2S</a>
+  <a href="https://www.tnt.fr/public/suivi_colis/recherche/index.do" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 Suivi TNT</a>
+  <a href="https://www.chronopost.fr/fr/suivi-colis" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 Suivi Chronopost</a>
+  <a href="http://lmline.lm2s.fr/technicien_pudo" target="_blank" rel="noopener" style="font-size:.72rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));padding:6px 12px;border-radius:16px;text-decoration:none;white-space:nowrap;">📦 LM2S Technicien</a>
 </div>
 <div id="vue-container"></div>
 
@@ -485,6 +500,14 @@ const PALETTE_COULEURS = [
   {bg:'#f9844a',border:'#c4602a'},  // orange doux
 ];
 
+// Éclaircit une couleur hex en la mélangeant avec du blanc (amount: 0=couleur d'origine, 1=blanc pur)
+function eclaircir(hex,amount){
+  const h=hex.replace('#','');
+  const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
+  const nr=Math.round(r+(255-r)*amount), ng=Math.round(g+(255-g)*amount), nb=Math.round(b+(255-b)*amount);
+  return 'rgb('+nr+','+ng+','+nb+')';
+}
+
 function couleurDonneur(donneur){
   if(!donneur||donneur.trim()===''){
     return{bg:'#1a3ed4',border:'#0f2490'};
@@ -550,6 +573,7 @@ function renderMois(){
     const ds=fmtISO(date);
     const isThisMonth=date.getMonth()===month;
     const isToday=ds===todayISO;
+    const isPassee=ds<todayISO; // date strictement avant aujourd'hui
     // Inter(s) "toute la journée" ce jour-là → la couleur du donneur remplit toute la case
     const journeeEvs=interventions.filter(e=>e.date===ds&&e.journee);
     let celStyle='';
@@ -557,24 +581,29 @@ function renderMois(){
     if(journeeEvs.length>0){
       const jc=couleurDonneur(journeeEvs[0].donneur);
       const jEnAttente=journeeEvs[0].valide===false;
-      const jbg=jEnAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jc.bg:jc.bg;
+      const jCouleur=isPassee?eclaircir(jc.bg,.75):jc.bg;
+      const jbg=(jEnAttente&&!isPassee)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jCouleur:jCouleur;
       celStyle=' style="background:'+jbg+';"';
     } else {
       // Inter "demi-journée" → la moitié (matin ou aprem, selon l'heure de début) prend la couleur du donneur
       const demiEv=interventions.find(e=>e.date===ds&&e.demiJournee);
       if(demiEv){
         const dc=couleurDonneur(demiEv.donneur);
+        const dCouleur=isPassee?eclaircir(dc.bg,.75):dc.bg;
         const startMin=toMin(demiEv.debut);
         const isMatin=(startMin===null)||startMin<13*60;
         const grad=isMatin
-          ?'linear-gradient(to bottom,'+dc.bg+' 0%,'+dc.bg+' 50%,transparent 50%,transparent 100%)'
-          :'linear-gradient(to top,'+dc.bg+' 0%,'+dc.bg+' 50%,transparent 50%,transparent 100%)';
+          ?'linear-gradient(to bottom,'+dCouleur+' 0%,'+dCouleur+' 50%,transparent 50%,transparent 100%)'
+          :'linear-gradient(to top,'+dCouleur+' 0%,'+dCouleur+' 50%,transparent 50%,transparent 100%)';
         celStyle=' style="background:'+grad+';"';
         demiClass=isMatin?' demi-matin':' demi-aprem';
       }
     }
+    // Weekend (samedi/dimanche) → léger fond vert, sauf si autre couleur déjà appliquée (journée/demi-journée/aujourd'hui) ou hors mois
+    const isWeekend=(date.getDay()===0||date.getDay()===6);
+    const weekendClass=(isWeekend&&!celStyle&&!isToday&&isThisMonth)?' weekend':'';
     // Clic → vue jour de ce jour
-    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
+    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+weekendClass+(isPassee?' passee':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     journeeEvs.forEach(jev=>{
       html+='<div class="journee-label" onclick="event.stopPropagation();ouvrirEv(\''+jev.id+'\')">'
@@ -582,7 +611,7 @@ function renderMois(){
         +'</div>';
     });
     const evs=interventions.filter(e=>e.date===ds&&!e.journee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const couleur=isPassee?eclaircir(c.bg,.7):c.bg;const bg=(enAttente&&!isPassee)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+couleur:couleur;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+(isPassee?' passee':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
@@ -696,8 +725,10 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
       const c=couleurDonneur(ev.donneur);
       const enAttente=ev.valide===false;
       const colis=!!ev.colis;
-      const bg=enAttente?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+c.bg:c.bg;
-      html+='<div class="tg-ev'+(enAttente?' en-attente':'')+(colis?' colis':'')+'"'
+      const evPassee=ds<todayISO;
+      const couleur=evPassee?eclaircir(c.bg,.7):c.bg;
+      const bg=(enAttente&&!evPassee)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+couleur:couleur;
+      html+='<div class="tg-ev'+(enAttente?' en-attente':'')+(colis?' colis':'')+(evPassee?' passee':'')+'"'
         +' style="top:'+topPx+'px;height:'+heightPx+'px;background:'+bg+';border-left:3px solid '+c.border+';"'
         +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')"'
         +' title="'+(ev.client||'')+(ev.debut?' · '+ev.debut:'')+(ev.fin?' → '+ev.fin:'')+(enAttente?' · EN ATTENTE':'')+'">'
@@ -753,6 +784,13 @@ function updateStats(){
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i));
   document.getElementById('stat-count').textContent=liste.length;
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
+
+  // Totaux annuels (somme de tous les mois de l'année affichée) — le total € exclut les inters "en attente"
+  const anneePrefix=currentDate.getFullYear()+'-';
+  const listeAnnee=interventions.filter(i=>i.date&&i.date.startsWith(anneePrefix)&&estFacturable(i));
+  document.getElementById('stat-count-annuel').textContent=listeAnnee.length;
+  const totalAnnuel=listeAnnee.filter(i=>i.valide!==false).reduce((s,i)=>s+(parseFloat(i.tarif)||0),0);
+  document.getElementById('stat-total-annuel').textContent=Math.round(totalAnnuel)+' €';
 }
 
 // ---- LISTE ----
@@ -919,9 +957,9 @@ function detecterDoublons(){
 // ---- EXPORT ----
 function exportCSVMois(){
   const prefix=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
-  // Seules les interventions avec un donneur d'ordre renseigné sont exportées
-  const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i));
-  if(liste.length===0){alert('Aucune intervention avec donneur d\'ordre ce mois-ci.');return;}
+  // Seules les interventions avec un donneur d'ordre renseigné, validées (pas "en attente"), sont exportées
+  const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i)&&i.valide!==false);
+  if(liste.length===0){alert('Aucune intervention validée avec donneur d\'ordre ce mois-ci.');return;}
   let csv="Date;Début;Fin;Client;Adresse;Descriptif;Donneur d'ordre;N° intervention;Tarif\n";
   liste.forEach(i=>{csv+=`${i.date};${i.debut||''};${i.fin||''};${i.client||''};${i.adresse||''};${i.descriptif||''};${i.donneur||''};${i.numero||''};${i.tarif||''}\n`;});
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
