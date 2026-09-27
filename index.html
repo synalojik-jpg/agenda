@@ -65,11 +65,13 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 /* VUE MOIS */
 .cal-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;}
 .cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
-.cal-day-names{display:grid;grid-template-columns:repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
+.cal-day-names{display:grid;grid-template-columns:22px repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
-.cal-body{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-body{display:grid;grid-template-columns:22px repeat(7,1fr);}
 .cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;min-width:0;overflow:visible;padding:3px;cursor:pointer;position:relative;}
-.cal-cell:nth-child(7n){border-right:none;}
+.cal-cell:nth-child(8n){border-right:none;}
+.week-num-col{display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);}
+.week-num-badge{width:18px;height:18px;border-radius:50%;background:var(--bleu);color:#fff;font-size:.58rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
 .cal-cell.weekend{background:#f1f8f2;}
@@ -294,9 +296,9 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-journee"><label for="f-journee">📅 Toute la journée</label></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-demi-journee"><label for="f-demi-journee">🌗 Demi-journée</label></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-journee"><label for="f-journee">📅 Toute la journée (pas d'heure)</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-demi-journee"><label for="f-demi-journee">🌗 Demi-journée (garde l'heure de début)</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente (pas encore validée)</label></div>
       <div class="form-field check-field"><input type="checkbox" id="f-colis"><label for="f-colis">📦 Retrait colis chez transporteur</label></div>
       <div class="btn-row">
         <button class="btn-ajouter" onclick="ajouterIntervention()">✔ Ajouter</button>
@@ -422,6 +424,7 @@ function fmtFR(date){return date.toLocaleDateString('fr-FR',{weekday:'long',year
 function fmtH(h){return String(h).padStart(2,'0')+':00';}
 function fmtH30(h){return String(h).padStart(2,'0')+':30';}
 function lundi(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return d;}
+function getWeekNumber(date){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));const dayNum=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-dayNum);const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil((((d-yearStart)/86400000)+1)/7);}
 
 // ---- NAVIGATION ----
 function naviguer(delta){
@@ -565,12 +568,15 @@ function renderMois(){
   const daysInMonth=new Date(year,month+1,0).getDate();
   const total=Math.ceil((startDay+daysInMonth)/7)*7;
   const todayISO=fmtISO(new Date());
-  let html='<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names">';
+  let html='<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names"><div></div>';
   JOURS.forEach(j=>{html+='<div>'+j+'</div>';});
   html+='</div><div class="cal-body">';
   for(let i=0;i<total;i++){
     const date=new Date(year,month,1+i-startDay);
     const ds=fmtISO(date);
+    if(i%7===0){
+      html+='<div class="week-num-col"><span class="week-num-badge">'+getWeekNumber(date)+'</span></div>';
+    }
     const isThisMonth=date.getMonth()===month;
     const isToday=ds===todayISO;
     const isPassee=ds<todayISO; // date strictement avant aujourd'hui
@@ -607,7 +613,7 @@ function renderMois(){
     html+='<div class="num-jour">'+date.getDate()+'</div>';
     journeeEvs.forEach(jev=>{
       html+='<div class="journee-label" onclick="event.stopPropagation();ouvrirEv(\''+jev.id+'\')">'
-        +(jev.valide===false?'⏳ ':'')+(jev.colis?'📦 ':'')+'📅 '+(jev.client||'')
+        +(jev.valide===false?'⏳ ':'')+(jev.colis?'📦 ':'')+(jev.client||'')
         +'</div>';
     });
     const evs=interventions.filter(e=>e.date===ds&&!e.journee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
@@ -673,7 +679,7 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
         html+='<div class="ev-chip journee-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+'"'
           +' style="background:'+bg+';border-left:3px solid '+c.border+';"'
           +' onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'
-          +(enAttente?'⏳ ':'')+'📅 '+(ev.client||'')
+          +(enAttente?'⏳ ':'')+(ev.client||'')
           +'</div>';
       });
       html+='</div>';
@@ -809,7 +815,7 @@ function ouvrirListe(ds){
     const journee=!!ev.journee;
     html+='<div class="day-item'+(enAttente?' en-attente':'')+'" onclick="ouvrirEv(\''+ev.id+'\')">';
     html+='<div class="day-item-left">';
-    html+='<div class="day-item-client">'+(colis?'📦 ':'')+(journee?'📅 ':'')+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
+    html+='<div class="day-item-client">'+(colis?'📦 ':'')+(ev.client||'—')+(enAttente?'<span class="badge-attente">En attente</span>':'')+'</div>';
     html+='<div class="day-item-detail">'+(journee?'Toute la journée':(ev.debut||'')+( ev.fin?' → '+ev.fin:''))+( ev.adresse?' · '+ev.adresse:'')+'</div>';
     html+='</div><div class="day-item-tarif">'+(ev.tarif?ev.tarif+' €':'')+'</div></div>';
   });
