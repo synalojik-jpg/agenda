@@ -291,14 +291,15 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
       <div class="form-field" id="champ-date-fin"><label>Date de fin</label><input type="date" id="f-date-fin"></div>
       <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
       <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
+      <a id="f-descriptif-lien" target="_blank" rel="noopener" style="display:none;margin:-4px 0 8px;font-size:.8rem;font-weight:600;color:var(--bleu);">🔗 Ouvrir le lien</a>
       <div class="form-row-2">
         <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" list="liste-donneurs" placeholder="Donneur d'ordre" autocomplete="off"><datalist id="liste-donneurs"></datalist></div>
         <div class="form-field"><label>N° intervention</label><input type="text" id="f-numero" placeholder="Référence"></div>
       </div>
       <div class="form-field"><label>Tarif (€)</label><input type="number" id="f-tarif" placeholder="0.00" step="0.01"></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-journee"><label for="f-journee">Intervention Journée </label></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-demi-journee"><label for="f-demi-journee">Demi-journée </label></div>
-      <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente </label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-journee"><label for="f-journee">Journée</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-demi-journee"><label for="f-demi-journee">Demi-journée</label></div>
+      <div class="form-field check-field"><input type="checkbox" id="f-valide"><label for="f-valide">Intervention en attente</label></div>
       <div class="form-field check-field"><input type="checkbox" id="f-colis"><label for="f-colis">📦 Retrait colis chez transporteur</label></div>
       <div class="btn-row">
         <button class="btn-ajouter" onclick="ajouterIntervention()">✔ Ajouter</button>
@@ -552,7 +553,9 @@ async function supprimerDonneur(donneur){
   const evs=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()===key);
   if(evs.length===0){alert("Aucun événement pour ce donneur.");return;}
   if(!confirm('Supprimer les '+evs.length+" événement(s) de \""+donneur+'\" ?'))return;
-  evs.forEach(i=>deletedIds.add(i.id)); // tombstones partagés via Drive
+  const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
+  evs.forEach(i=>deleted.push(i.id));
+  localStorage.setItem('synalojik_deleted',JSON.stringify(deleted));
   interventions=interventions.filter(i=>(i.donneur||'').trim().toUpperCase()!==key);
   await sauvegarder();render();
 }
@@ -843,7 +846,7 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
     document.getElementById('f-fin').value=i.fin||'';
     document.getElementById('f-client').value=i.client||'';
     document.getElementById('f-adresse').value=i.adresse||'';
-    document.getElementById('f-descriptif').value=i.descriptif||'';
+    document.getElementById('f-descriptif').value=i.descriptif||'';majLienDescriptif();
     document.getElementById('f-donneur').value=i.donneur||'';
     document.getElementById('f-numero').value=i.numero||'';
     document.getElementById('f-tarif').value=i.tarif||'';
@@ -866,7 +869,14 @@ function ouvrirEv(id){
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
-function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;document.getElementById('f-demi-journee').checked=false;}
+function majLienDescriptif(){
+  const v=document.getElementById('f-descriptif').value;
+  const m=v.match(/https?:\/\/[^\s]+/);
+  const a=document.getElementById('f-descriptif-lien');
+  if(m){a.href=m[0];a.style.display='inline-block';}else{a.style.display='none';}
+}
+document.getElementById('f-descriptif').addEventListener('input',majLienDescriptif);
+function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;document.getElementById('f-demi-journee').checked=false;majLienDescriptif();}
 function getFormData(id){
   return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked,journee:document.getElementById('f-journee').checked,demiJournee:document.getElementById('f-demi-journee').checked};
 }
