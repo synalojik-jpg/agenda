@@ -787,7 +787,6 @@ function renderJour(){
 
 // ---- STATS ----
 // Seules les interventions avec un donneur d'ordre renseigné comptent comme "vraies" interventions
-function estFacturable(i){return !!(i.donneur&&i.donneur.trim()!=='');}
 function updateStats(){
   const prefix=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i)&&i.valide!==false);
@@ -796,7 +795,7 @@ function updateStats(){
 
   // Totaux annuels (somme de tous les mois de l'année affichée) — le total € exclut les inters "en attente"
   const anneePrefix=currentDate.getFullYear()+'-';
-  const totalAnnuel=listeAnnee.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0);
+  const listeAnnee=interventions.filter(i=>i.date&&i.date.startsWith(anneePrefix)&&estFacturable(i)&&i.valide!==false);
   document.getElementById('stat-count-annuel').textContent=listeAnnee.length;
   const totalAnnuel=listeAnnee.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0);
   document.getElementById('stat-total-annuel').textContent=Math.round(totalAnnuel)+' €';
