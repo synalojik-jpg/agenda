@@ -65,13 +65,14 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 /* VUE MOIS */
 .cal-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;}
 .cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
-.cal-day-names{display:grid;grid-template-columns:22px repeat(5,1fr) repeat(2,.5fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
+.cal-day-names{display:grid;grid-template-columns:repeat(5,1fr) repeat(2,.5fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
-.cal-body{display:grid;grid-template-columns:22px repeat(5,1fr) repeat(2,.5fr);}
+.cal-body{display:grid;grid-template-columns:repeat(5,1fr) repeat(2,.5fr);}
 .cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;min-width:0;overflow:visible;padding:3px;cursor:pointer;position:relative;}
-.cal-cell:nth-child(8n){border-right:none;}
-.week-num-col{display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);}
-.week-num-badge{width:18px;height:18px;border-radius:50%;background:var(--bleu);color:#fff;font-size:.58rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;}
+.cal-cell:nth-child(7n){border-right:none;}
+.num-jour-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+.num-jour-row .num-jour{margin-bottom:0;}
+.week-num-badge{width:16px;height:16px;border-radius:50%;background:var(--bleu);color:#fff;font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;}
 .cal-cell:hover{background:#f0f4ff;}
 .cal-cell.autre-mois{background:#fafafa;}
 .cal-cell.weekend{background:#f1f8f2;}
@@ -571,15 +572,13 @@ function renderMois(){
   const daysInMonth=new Date(year,month+1,0).getDate();
   const total=Math.ceil((startDay+daysInMonth)/7)*7;
   const todayISO=fmtISO(new Date());
-  let html='<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names"><div></div>';
+  let html='<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names">';
   JOURS.forEach(j=>{html+='<div>'+j+'</div>';});
   html+='</div><div class="cal-body">';
   for(let i=0;i<total;i++){
     const date=new Date(year,month,1+i-startDay);
     const ds=fmtISO(date);
-    if(i%7===0){
-      html+='<div class="week-num-col"><span class="week-num-badge">'+getWeekNumber(date)+'</span></div>';
-    }
+
     const isThisMonth=date.getMonth()===month;
     const isToday=ds===todayISO;
     const isPassee=ds<todayISO; // date strictement avant aujourd'hui
@@ -613,7 +612,7 @@ function renderMois(){
     const weekendClass=(isWeekend&&!celStyle&&!isToday&&isThisMonth)?' weekend':'';
     // Clic → vue jour de ce jour
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+weekendClass+(isPassee?' passee':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
-    html+='<div class="num-jour">'+date.getDate()+'</div>';
+    html+=(i%7===0)?('<div class="num-jour-row"><span class="week-num-badge">'+getWeekNumber(date)+'</span><div class="num-jour">'+date.getDate()+'</div></div>'):('<div class="num-jour">'+date.getDate()+'</div>');
     journeeEvs.forEach(jev=>{
       html+='<div class="journee-label" onclick="event.stopPropagation();ouvrirEv(\''+jev.id+'\')">'
         +(jev.valide===false?'⏳ ':'')+(jev.colis?'📦 ':'')+(jev.client||'')
