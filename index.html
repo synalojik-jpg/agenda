@@ -65,9 +65,9 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 /* VUE MOIS */
 .cal-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;}
 .cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
-.cal-day-names{display:grid;grid-template-columns:22px repeat(7,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
+.cal-day-names{display:grid;grid-template-columns:22px repeat(5,1fr) repeat(2,.5fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
-.cal-body{display:grid;grid-template-columns:22px repeat(7,1fr);}
+.cal-body{display:grid;grid-template-columns:22px repeat(5,1fr) repeat(2,.5fr);}
 .cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;min-width:0;overflow:visible;padding:3px;cursor:pointer;position:relative;}
 .cal-cell:nth-child(8n){border-right:none;}
 .week-num-col{display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);}
@@ -790,15 +790,15 @@ function renderJour(){
 function estFacturable(i){return !!(i.donneur&&i.donneur.trim()!=='');}
 function updateStats(){
   const prefix=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
-  const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i));
+  const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i)&&i.valide!==false);
   document.getElementById('stat-count').textContent=liste.length;
   document.getElementById('stat-total').textContent=liste.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0).toFixed(2)+' €';
 
-  // Totaux annuels (somme de tous les mois de l'année affichée) — le total € exclut les inters "en attente"
+  // Totaux annuels (somme de tous les mois de l'année affichée) — exclut les inters "en attente"
   const anneePrefix=currentDate.getFullYear()+'-';
-  const listeAnnee=interventions.filter(i=>i.date&&i.date.startsWith(anneePrefix)&&estFacturable(i));
+  const listeAnnee=interventions.filter(i=>i.date&&i.date.startsWith(anneePrefix)&&estFacturable(i)&&i.valide!==false);
   document.getElementById('stat-count-annuel').textContent=listeAnnee.length;
-  const totalAnnuel=listeAnnee.filter(i=>i.valide!==false).reduce((s,i)=>s+(parseFloat(i.tarif)||0),0);
+  const totalAnnuel=listeAnnee.reduce((s,i)=>s+(parseFloat(i.tarif)||0),0);
   document.getElementById('stat-total-annuel').textContent=Math.round(totalAnnuel)+' €';
 }
 
@@ -871,9 +871,15 @@ function fermerForm(){document.getElementById('overlayForm').classList.remove('v
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
 function majLienDescriptif(){
   const v=document.getElementById('f-descriptif').value;
-  const m=v.match(/https?:\/\/[^\s]+/);
+  const m=v.match(/((?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/);
   const a=document.getElementById('f-descriptif-lien');
-  if(m){a.href=m[0];a.style.display='inline-block';}else{a.style.display='none';}
+  if(m){
+    let url=m[0];
+    if(!/^https?:\/\//i.test(url))url='https://'+url;
+    a.href=url;a.style.display='inline-block';
+  }else{
+    a.style.display='none';
+  }
 }
 document.getElementById('f-descriptif').addEventListener('input',majLienDescriptif);
 function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;document.getElementById('f-demi-journee').checked=false;majLienDescriptif();}
