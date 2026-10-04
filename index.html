@@ -1019,11 +1019,7 @@ function parseResa(txt){
     if(!a&&d<auj)d=new Date(an+1,mo,j,12);
     return d;
   };
-  const noms=[...DONNEURS_CONNUS].sort((a,b)=>b.length-a.length);
-  for(const nom of noms){
-    const k=normResa(nom).replace(/\s+/g,'').split('').map(c=>c.replace(/[^a-z0-9]/g,'\\$&')).join('\\s*');
-    const re=new RegExp('(^|\\s)'+k+'(?=\\s|$)');
-    if(re.test(t)){out.donneur=nom;t=t.replace(re,' ');break;}
+    const trouve=trouverDonneur(t); if(trouve){out.donneur=trouve.nom;t=trouve.t;}
   }
   const hs=[];
   t=t.replace(/(\d{1,2})\s*(?:h|heures?|:)\s*(\d{2})?(?![a-z0-9])/g,(m,h,mn)=>{hs.push(h.padStart(2,'0')+':'+(mn||'00'));return ' ';});
@@ -1049,6 +1045,35 @@ function parseResa(txt){
   out.dates.sort();
   return out;
 }
+  const ALIAS_DONNEURS={
+  '5COM':['50','5 com','cinq com','cinq comme','5 comme'],
+  'ADISTA':['a distance','a dista','a d i s t a'],
+  'ANTIBUG':['anti bug','anti buzz'],
+  'BA2I':['ba 2 i','b a 2 i','bai'],
+  'CONNEXX':['connexe','connect x'],
+  'DELTINFO':['delta info'],
+  'PRESTINFO MAINTENANCE':['prestinfo','presto info'],
+  'ITEC':['i tech','itech'],
+  'APPUITECH':['appui tech','appuie tech'],
+  'VISIOSCREEN':['visio screen'],
+  'MMF SERVICES':['mmf service','m m f services'],
+  'ISLO SERVICES':['islo service'],
+  'ATI PC':['a t i p c'],
+  'SMART MCL':['smart m c l'],
+  'IAGONA':['yagona','jagona']
+};
+function trouverDonneur(t){
+  const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const essayer=(nom,motif)=>{const re=new RegExp('(^|\\s)'+motif+'(?=\\s|$)');return re.test(t)?{nom:nom,t:t.replace(re,' ')}:null;};
+  for(const nom in ALIAS_DONNEURS)for(const a of ALIAS_DONNEURS[nom]){
+    const r=essayer(nom,esc(normResa(a)).replace(/\s+/g,'\\s+'));if(r)return r;
+  }
+  const noms=[...DONNEURS_CONNUS].sort((a,b)=>b.length-a.length);
+  for(const nom of noms){
+    const r=essayer(nom,normResa(nom).replace(/\s+/g,'').split('').map(esc).join('\\s*'));if(r)return r;
+  }
+  return null;
+}
 function recapResa(r){
   if(!r.dates.length)return 'Date non comprise';
   const f=s=>s.split('-').reverse().join('/');
@@ -1062,20 +1087,32 @@ function ouvrirResa(){
   document.getElementById('resa-mic').style.display=(window.SpeechRecognition||window.webkitSpeechRecognition)?'block':'none';
   document.getElementById('overlayResa').classList.add('visible');
 }
+  ecoute=false; if(reco)try{reco.stop();}catch(e){}
 function fermerResa(){document.getElementById('overlayResa').classList.remove('visible');}
 document.getElementById('overlayResa').addEventListener('click',function(e){if(e.target===this)fermerResa();});
 document.getElementById('resa-txt').addEventListener('input',function(){
   document.getElementById('resa-recap').textContent=recapResa(parseResa(this.value));
 });
+let reco=null, ecoute=false, baseTxt='';
 function dicter(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR)return;
-  const r=new SR(); r.lang='fr-FR'; r.interimResults=true; r.continuous=false;
   const inp=document.getElementById('resa-txt'), btn=document.getElementById('resa-mic');
-  btn.textContent='🔴 Je t\'écoute...';
-  r.onresult=e=>{inp.value=[...e.results].map(x=>x[0].transcript).join(' ');inp.dispatchEvent(new Event('input'));};
-  r.onend=r.onerror=()=>{btn.textContent='🎤 Dicter';};
-  r.start();
+  if(ecoute){ecoute=false;if(reco)try{reco.stop();}catch(e){}return;}
+  ecoute=true; baseTxt=inp.value?inp.value+' ':'';
+  btn.textContent='⏹ Stop (je t\'écoute...)';
+  const lancer=()=>{
+    reco=new SR(); reco.lang='fr-FR'; reco.interimResults=true; reco.continuous=false;
+    reco.onresult=e=>{
+      let txt=''; for(const r of e.results) txt+=r[0].transcript+' ';
+      inp.value=baseTxt+txt.trim(); inp.dispatchEvent(new Event('input'));
+      if(e.results[e.results.length-1].isFinal) baseTxt=inp.value+' ';
+    };
+    reco.onend=()=>{ if(ecoute) setTimeout(lancer,150); else btn.textContent='🎤 Dicter'; };
+    reco.onerror=ev=>{ if(ev.error==='no-speech'||ev.error==='aborted')return; ecoute=false; btn.textContent='🎤 Dicter'; };
+    reco.start();
+  };
+  lancer();
 }
 async function validerResa(){
   const r=parseResa(document.getElementById('resa-txt').value);
