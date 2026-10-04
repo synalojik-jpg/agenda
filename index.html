@@ -1020,7 +1020,6 @@ function parseResa(txt){
     return d;
   };
     const trouve=trouverDonneur(t); if(trouve){out.donneur=trouve.nom;t=trouve.t;}
-  }
   const hs=[];
   t=t.replace(/(\d{1,2})\s*(?:h|heures?|:)\s*(\d{2})?(?![a-z0-9])/g,(m,h,mn)=>{hs.push(h.padStart(2,'0')+':'+(mn||'00'));return ' ';});
   out.debut=hs[0]||null; out.fin=hs[1]||null;
@@ -1087,8 +1086,7 @@ function ouvrirResa(){
   document.getElementById('resa-mic').style.display=(window.SpeechRecognition||window.webkitSpeechRecognition)?'block':'none';
   document.getElementById('overlayResa').classList.add('visible');
 }
-  ecoute=false; if(reco)try{reco.stop();}catch(e){}
-function fermerResa(){document.getElementById('overlayResa').classList.remove('visible');}
+function fermerResa(){ecoute=false; if(reco)try{reco.stop();}catch(e){}document.getElementById('overlayResa').classList.remove('visible');}
 document.getElementById('overlayResa').addEventListener('click',function(e){if(e.target===this)fermerResa();});
 document.getElementById('resa-txt').addEventListener('input',function(){
   document.getElementById('resa-recap').textContent=recapResa(parseResa(this.value));
