@@ -70,6 +70,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 .cal-body{display:grid;grid-template-columns:repeat(5,1fr) repeat(2,.5fr);}
 .cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;min-width:0;overflow:visible;padding:3px;cursor:pointer;position:relative;}
 .cal-cell:nth-child(7n){border-right:none;}
+.somme-jour{position:absolute;top:3px;right:3px;font-size:.6rem;font-weight:700;line-height:1;padding:2px 4px;border-radius:8px;background:rgba(255,255,255,.85);color:#1f2937;pointer-events:none;}
 .num-jour-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
 .num-jour-row .num-jour{margin-bottom:0;}
 .week-num-badge{width:16px;height:16px;border-radius:50%;background:var(--bleu);color:#fff;font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;}
@@ -620,7 +621,9 @@ function renderMois(){
         const grad=isMatin
           ?'linear-gradient(to bottom,'+dCouleur+' 0%,'+dCouleur+' 50%,transparent 50%,transparent 100%)'
           :'linear-gradient(to top,'+dCouleur+' 0%,'+dCouleur+' 50%,transparent 50%,transparent 100%)';
-        celStyle=' style="background:'+grad+';"';
+        const demiAttente=demiEv.valide===false&&!isPassee;
+        const hach='repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px) '+(isMatin?'top':'bottom')+'/100% 50% no-repeat,';
+        celStyle=' style="background:'+(demiAttente?hach:'')+grad+';"';
         demiClass=isMatin?' demi-matin':' demi-aprem';
       }
     }
@@ -630,6 +633,8 @@ function renderMois(){
     // Clic → vue jour de ce jour
     html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+weekendClass+(isPassee?' passee':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
     html+=(i%7===0)?('<div class="num-jour-row"><span class="week-num-badge">'+getWeekNumber(date)+'</span><div class="num-jour">'+date.getDate()+'</div></div>'):('<div class="num-jour">'+date.getDate()+'</div>');
+    const sommeJour=interventions.filter(e=>e.date===ds&&estFacturable(e)&&e.valide!==false).reduce((t,e)=>t+(parseFloat(e.tarif)||0),0);
+    if(sommeJour>0)html+='<div class="somme-jour">'+(Math.round(sommeJour*100)/100)+'€</div>';
     journeeEvs.forEach(jev=>{
       html+='<div class="journee-label" onclick="event.stopPropagation();ouvrirEv(\''+jev.id+'\')">'
         +(jev.valide===false?'⏳ ':'')+(jev.colis?'📦 ':'')+(jev.client||'')
@@ -1045,7 +1050,7 @@ function parseResa(txt){
   return out;
 }
   const ALIAS_DONNEURS={
-  '5COM':['50','5 com','cinq com','cinq comme','5 comme','saint-come','saint come','cest comme','c comme',['c\'est comme', 'ses commes', 'ces commes', 'sait comme', 'cinq com', 'cinq hommes'],
+  '5COM':['50','5 com','cinq com','cinq comme','5 comme','saint-come','saint come','cest comme','c comme','ses commes','ces commes','sait comme','cinq hommes'],
   'ADISTA':['a distance','a dista','a d i s t a'],
   'ANTIBUG':['anti bug','anti buzz'],
   'BA2I':['ba 2 i','b a 2 i','bai'],
