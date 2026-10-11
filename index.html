@@ -65,11 +65,11 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
 /* VUE MOIS */
 .cal-wrapper{max-width:1100px;margin:0 auto 20px;padding:0 12px;}
 .cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
-.cal-day-names{display:grid;grid-template-columns:repeat(5,1fr) repeat(2,.5fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
+.cal-day-names{display:grid;grid-template-columns:repeat(6,1fr);background:linear-gradient(135deg,var(--bleu-fonce),var(--bleu));}
 .cal-day-names div{text-align:center;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85);padding:8px 0;letter-spacing:1px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
-.cal-body{display:grid;grid-template-columns:repeat(5,1fr) repeat(2,.5fr);}
+.cal-body{display:grid;grid-template-columns:repeat(6,1fr);}
 .cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:75px;min-width:0;overflow:visible;padding:3px;cursor:pointer;position:relative;}
-.cal-cell:nth-child(7n){border-right:none;}
+.cal-cell:nth-child(6n){border-right:none;}
 .somme-jour{position:absolute;top:3px;right:3px;font-size:.6rem;font-weight:700;line-height:1;padding:2px 4px;border-radius:8px;background:rgba(255,255,255,.85);color:#1f2937;pointer-events:none;}
 .num-jour-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
 .num-jour-row .num-jour{margin-bottom:0;}
@@ -296,6 +296,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
       </div>
       <div class="form-field" id="champ-date-fin"><label>Date de fin</label><input type="date" id="f-date-fin"></div>
       <div class="form-field"><label>Adresse</label><input type="text" id="f-adresse" placeholder="Adresse"></div>
+      <div class="form-field"><label>Descriptif</label><textarea id="f-descriptif" placeholder="Description"></textarea></div>
       <a id="f-descriptif-lien" target="_blank" rel="noopener" style="display:none;margin:-4px 0 8px;font-size:.8rem;font-weight:600;color:var(--bleu);">🔗 Ouvrir le lien</a>
       <div class="form-row-2">
         <div class="form-field"><label>Donneur d'ordre</label><input type="text" id="f-donneur" list="liste-donneurs" placeholder="Donneur d'ordre" autocomplete="off"><datalist id="liste-donneurs"></datalist></div>
@@ -449,10 +450,10 @@ function getWeekNumber(date){const d=new Date(Date.UTC(date.getFullYear(),date.g
 function naviguer(delta){
   if(vue==='mois'){currentDate.setMonth(currentDate.getMonth()+delta);}
   else if(vue==='semaine'){currentDate.setDate(currentDate.getDate()+delta*7);}
-  else{currentDate.setDate(currentDate.getDate()+delta);}
+  else{currentDate.setDate(currentDate.getDate()+delta);if(currentDate.getDay()===0)currentDate.setDate(currentDate.getDate()+delta);}
   render();
 }
-function allerAujourdhui(){currentDate=new Date();render();}
+function allerAujourdhui(){currentDate=new Date();if(currentDate.getDay()===0)currentDate.setDate(currentDate.getDate()+1);render();}
 function changerVue(v){
   vue=v;
   ['mois','semaine','jour'].forEach(x=>document.getElementById('vbtn-'+x).classList.toggle('active',x===v));
@@ -472,7 +473,7 @@ document.addEventListener('touchend',e=>{
 // et utilisés pour garantir des couleurs distinctes). Tu peux en ajouter/retirer ici.
 const DONNEURS_CONNUS = ['5COM','ADISTA','ANTIBUG','APPUITECH','ATI PC','BA2I','CONNEXX','DELTINFO',
   'GC DEVELOPPEMENT','IAGONA','ISLO SERVICES','ITEC','LEMON GROUP','MA BUREAUTIQUE','MMF SERVICES',
-  'MY CONNECT','NEXT BUSINESS DAY','NOVA INTEGRATION','PRESTINFO MAINTENANCE','SMART MCL','PC SERVICES'];
+  'MY CONNECT','NEXT BUSINESS DAY','NOVA INTEGRATION','PRESTINFO MAINTENANCE','SMART MCL','VISIOSCREEN'];
 
 // Construit la liste des donneurs à proposer dans le champ (liste fixe + ceux déjà tapés dans l'historique)
 function listeDonneursDatalist(){
@@ -590,10 +591,11 @@ function renderMois(){
   const total=Math.ceil((startDay+daysInMonth)/7)*7;
   const todayISO=fmtISO(new Date());
   let html='<div class="cal-wrapper"><div class="cal-grid"><div class="cal-day-names">';
-  JOURS.forEach(j=>{html+='<div>'+j+'</div>';});
+  JOURS.slice(0,6).forEach(j=>{html+='<div>'+j+'</div>';});
   html+='</div><div class="cal-body">';
-  for(let i=0;i<total;i++){
+  for(let i=(startDay===6?7:0);i<total;i++){
     const date=new Date(year,month,1+i-startDay);
+    if(date.getDay()===0)continue; // dimanche masqué
     const ds=fmtISO(date);
 
     const isThisMonth=date.getMonth()===month;
@@ -777,16 +779,16 @@ function buildGrille(cols, getColHeader, getColClass, nbCols, colWidth){
 function renderSemaine(){
   const lun=lundi(currentDate);
   const jours=[];
-  for(let i=0;i<7;i++){const d=new Date(lun);d.setDate(lun.getDate()+i);jours.push(d);}
+  for(let i=0;i<6;i++){const d=new Date(lun);d.setDate(lun.getDate()+i);jours.push(d);}
   const todayISO=fmtISO(new Date());
   document.getElementById('titre-periode').textContent=
     jours[0].toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+
-    jours[6].toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    jours[5].toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
   const html=buildGrille(
     jours,
     (d)=>JOURS[(d.getDay()+6)%7]+' '+d.getDate(),
     (d)=>fmtISO(d)===todayISO?'today-col':'',
-    7,'52px'
+    6,'52px'
   );
   document.getElementById('vue-container').innerHTML=html;
 }
@@ -1002,8 +1004,10 @@ function exportCSVMois(){
   // Seules les interventions avec un donneur d'ordre renseigné, validées (pas "en attente"), sont exportées
   const liste=interventions.filter(i=>i.date&&i.date.startsWith(prefix)&&estFacturable(i)&&i.valide!==false);
   if(liste.length===0){alert('Aucune intervention validée avec donneur d\'ordre ce mois-ci.');return;}
-  let csv="Date;Début;Fin;Client;Adresse;Descriptif;Donneur d'ordre;N° intervention;Tarif\n";
-  liste.forEach(i=>{csv+=`${i.date};${i.debut||''};${i.fin||''};${i.client||''};${i.adresse||''};${i.descriptif||''};${i.donneur||''};${i.numero||''};${i.tarif||''}\n`;});
+  // Tri : donneur d'ordre, puis date, puis heure de début
+  liste.sort((a,b)=>(a.donneur||'').trim().localeCompare((b.donneur||'').trim(),'fr',{sensitivity:'base'})||(a.date||'').localeCompare(b.date||'')||(a.debut||'').localeCompare(b.debut||''));
+  let csv="Date;Début;Fin;Client;Adresse;Donneur d'ordre;N° intervention;Tarif\n";
+  liste.forEach(i=>{csv+=`${i.date};${i.debut||''};${i.fin||''};${i.client||''};${i.adresse||''};${i.donneur||''};${i.numero||''};${i.tarif||''}\n`;});
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='synalojik_'+prefix+'.csv';link.click();
 }
