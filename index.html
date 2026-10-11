@@ -336,6 +336,7 @@ const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
 let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
+let donneurFocus=null; // donneur mis en surbrillance (nom en majuscules), null = aucun
 let clipboardEv=null; // intervention copiée en attente de collage
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
@@ -547,18 +548,31 @@ function couleurDonneur(donneur){
   }
   return PALETTE_COULEURS[idx%PALETTE_COULEURS.length];
 }
+// ---- SURBRILLANCE D'UN DONNEUR D'ORDRE (clic dans la légende) ----
+function etatFocus(e){
+  if(!donneurFocus)return 'normal';
+  return ((e.donneur||'').trim().toUpperCase()===donneurFocus)?'focus':'dim';
+}
+function basculerFocus(nom){
+  const k=nom.trim().toUpperCase();
+  donneurFocus=(donneurFocus===k)?null:k;
+  render();
+}
 // ---- LÉGENDE DONNEURS D'ORDRE ----
 function renderLegende(){
   const el=document.getElementById('legende-donneurs');
   const prefix=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
   const donneurs=[...new Set(interventions.filter(i=>i.date&&i.date.startsWith(prefix)).map(i=>(i.donneur||'').trim()).filter(d=>d!==''))].sort();
+  // si le donneur en surbrillance n'a rien ce mois-ci, on annule la surbrillance
+  if(donneurFocus&&!donneurs.some(d=>d.trim().toUpperCase()===donneurFocus))donneurFocus=null;
   let html='<span style="font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Donneurs d\'ordre :</span>';
   if(donneurs.length===0){
     html+='<span style="font-size:.75rem;color:#9ca3af;">Aucun ce mois-ci</span>';
   } else {
     donneurs.forEach(d=>{
       const c=couleurDonneur(d);
-      html+='<span style="display:inline-flex;align-items:center;gap:5px;background:'+c.bg+';color:#fff;font-size:.72rem;font-weight:600;padding:3px 6px 3px 10px;border-radius:14px;">'
+      const actif=(donneurFocus===d.trim().toUpperCase());const att=(donneurFocus&&!actif);
+      html+='<span onclick="basculerFocus(\''+d.replace(/'/g,"\\'")+'\')" title="Mettre en surbrillance" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;background:'+c.bg+';color:#fff;font-size:.72rem;font-weight:600;padding:3px 6px 3px 10px;border-radius:14px;opacity:'+(att?'.35':'1')+';'+(actif?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+c.bg+';':'')+'">'
         +d
         +'<button onclick="event.stopPropagation();supprimerDonneur(\''+d.replace(/'/g,"\\'")+'\')" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:16px;height:16px;border-radius:50%;cursor:pointer;font-size:.65rem;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;" title="Supprimer ce donneur et ses interventions">✕</button>'
         +'</span>';
@@ -603,36 +617,43 @@ function renderMois(){
     const isPassee=ds<todayISO; // date strictement avant aujourd'hui
     // Inter(s) "toute la journée" ce jour-là → la couleur du donneur remplit toute la case
     const journeeEvs=interventions.filter(e=>e.date===ds&&e.journee);
+    // "clair" = couleur éclaircie : jour passé, ou donneur atténué par la surbrillance (un donneur en surbrillance garde ses couleurs vives)
+    const clair=(e)=>{const et=etatFocus(e);return et==='dim'||(et==='normal'&&isPassee);};
+    let cellClair=isPassee;
     let celStyle='';
     let demiClass='';
     if(journeeEvs.length>0){
       const jc=couleurDonneur(journeeEvs[0].donneur);
       const jEnAttente=journeeEvs[0].valide===false;
-      const jCouleur=isPassee?eclaircir(jc.bg,.75):jc.bg;
-      const jbg=(jEnAttente&&!isPassee)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jCouleur:jCouleur;
+      cellClair=clair(journeeEvs[0]);
+      const jCouleur=cellClair?eclaircir(jc.bg,.75):jc.bg;
+      const jbg=(jEnAttente&&!cellClair)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jCouleur:jCouleur;
       celStyle=' style="background:'+jbg+';"';
     } else {
-      // Inter "demi-journée" → la moitié (matin ou aprem, selon l'heure de début) prend la couleur du donneur
-      const demiEv=interventions.find(e=>e.date===ds&&e.demiJournee);
-      if(demiEv){
-        const dc=couleurDonneur(demiEv.donneur);
-        const dCouleur=isPassee?eclaircir(dc.bg,.75):dc.bg;
-        const startMin=toMin(demiEv.debut);
-        const isMatin=(startMin===null)||startMin<13*60;
-        const grad=isMatin
-          ?'linear-gradient(to bottom,'+dCouleur+' 0%,'+dCouleur+' 50%,transparent 50%,transparent 100%)'
-          :'linear-gradient(to top,'+dCouleur+' 0%,'+dCouleur+' 50%,transparent 50%,transparent 100%)';
-        const demiAttente=demiEv.valide===false&&!isPassee;
-        const hach='repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px) '+(isMatin?'top':'bottom')+'/100% 50% no-repeat,';
-        celStyle=' style="background:'+(demiAttente?hach:'')+grad+';"';
-        demiClass=isMatin?' demi-matin':' demi-aprem';
+      // Inter(s) "demi-journée" → chaque moitié (matin / aprem, selon l'heure de début) prend la couleur de son donneur
+      const demiEvs=interventions.filter(e=>e.date===ds&&e.demiJournee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
+      if(demiEvs.length>0){
+        const moitie={top:null,bottom:null};
+        demiEvs.forEach(e=>{const sm=toMin(e.debut);const k=(sm===null||sm<13*60)?'top':'bottom';if(!moitie[k])moitie[k]=e;});
+        const couches=[];
+        ['top','bottom'].forEach(k=>{
+          const e=moitie[k]; if(!e)return;
+          const dc=couleurDonneur(e.donneur);
+          const dClair=clair(e);
+          const dCouleur=dClair?eclaircir(dc.bg,.75):dc.bg;
+          if(e.valide===false&&!dClair)couches.push('repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px) '+k+'/100% 50% no-repeat');
+          couches.push('linear-gradient('+dCouleur+','+dCouleur+') '+k+'/100% 50% no-repeat');
+        });
+        celStyle=' style="background:'+couches.join(',')+';"';
+        demiClass=moitie.top?' demi-matin':' demi-aprem';
+        if(moitie.top)cellClair=clair(moitie.top);
       }
     }
     // Weekend (samedi/dimanche) → léger fond vert, sauf si autre couleur déjà appliquée (journée/demi-journée/aujourd'hui) ou hors mois
     const isWeekend=(date.getDay()===0||date.getDay()===6);
     const weekendClass=(isWeekend&&!celStyle&&!isToday&&isThisMonth)?' weekend':'';
     // Clic → vue jour de ce jour
-    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+weekendClass+(isPassee?' passee':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
+    html+='<div class="cal-cell'+((!isThisMonth)?' autre-mois':'')+(isToday?' today':'')+(journeeEvs.length>0?' journee-day':'')+demiClass+weekendClass+(cellClair?' passee':'')+'"'+celStyle+' onclick="handleDayClick(\''+ds+'\')">';
     html+=(i%7===0)?('<div class="num-jour-row"><span class="week-num-badge">'+getWeekNumber(date)+'</span><div class="num-jour">'+date.getDate()+'</div></div>'):('<div class="num-jour">'+date.getDate()+'</div>');
     const sommeJour=interventions.filter(e=>e.date===ds&&estFacturable(e)&&e.valide!==false).reduce((t,e)=>t+(parseFloat(e.tarif)||0),0);
     if(sommeJour>0)html+='<div class="somme-jour">'+(Math.round(sommeJour*100)/100)+'€</div>';
@@ -642,7 +663,7 @@ function renderMois(){
         +'</div>';
     });
     const evs=interventions.filter(e=>e.date===ds&&!e.journee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
-    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const couleur=isPassee?eclaircir(c.bg,.7):c.bg;const bg=(enAttente&&!isPassee)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+couleur:couleur;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+(isPassee?' passee':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
+    evs.forEach(ev=>{const c=couleurDonneur(ev.donneur);const enAttente=ev.valide===false;const colis=!!ev.colis;const cl=clair(ev);const couleur=cl?eclaircir(c.bg,.7):c.bg;const bg=(enAttente&&!cl)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+couleur:couleur;html+='<div class="ev-chip'+(enAttente?' en-attente':'')+(colis?' colis':'')+(cl?' passee':'')+'" style="background:'+bg+';border-left:3px solid '+c.border+';" onclick="event.stopPropagation();ouvrirEv(\''+ev.id+'\')">'+(enAttente?'⏳ ':'')+( ev.debut?ev.debut+' ':'')+( ev.client||'')+'</div>';});
     html+='</div>';
   }
   html+='</div></div></div>';
