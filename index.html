@@ -1150,7 +1150,7 @@ async function validerResa(){
   for(let d=new Date(d1);d<=d2;d.setDate(d.getDate()+1)){
     interventions.push({id:Date.now().toString()+Math.random().toString(36).slice(2,6),
       date:fmtISO(d),debut:r.debut||'09:00',fin:r.fin||(sansHeure?'18:00':''),
-      client:r.reste||'RÉSERVÉ',adresse:'',descriptif:'À COMPLÉTER',donneur:r.donneur,numero:'',tarif:'',
+      client:r.reste||'RÉSERVÉ',adresse:'',descriptif:'',donneur:r.donneur,numero:'',tarif:'',
       valide:false,colis:false,journee:sansHeure,demiJournee:false});
   }
   await sauvegarder();render();fermerResa();
