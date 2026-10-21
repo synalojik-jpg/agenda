@@ -313,6 +313,7 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <button class="btn-supprimer" onclick="supprimerIntervention()">🗑 Supprimer</button>
       </div>
       <button class="btn-copier" id="btn-copier" onclick="copierIntervention()" style="display:none;">📋 Copier cette intervention</button>
+      <button class="btn-retour" onclick="retourBas()" style="width:100%;margin-top:8px;padding:11px;font-size:.88rem;">← Retour</button>
     </div>
   </div>
 </div>
@@ -915,6 +916,11 @@ function ouvrirEv(id){
   ouvrirFormulaire(idx,null,null,jourEnCours!==null);
 }
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
+function retourBas(){
+  // même comportement que le Retour du haut : liste du jour si on en vient, sinon on ferme
+  if(document.getElementById('btn-retour').style.display==='block')retourListe();
+  else fermerForm();
+}  
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
 function majLienDescriptif(){
@@ -930,6 +936,12 @@ function majLienDescriptif(){
   }
 }
 document.getElementById('f-descriptif').addEventListener('input',majLienDescriptif);
+  document.getElementById('f-client').addEventListener('input',function(){
+  if(/vacances|absent/i.test(this.value)){
+    document.getElementById('f-journee').checked=true;
+    document.getElementById('f-demi-journee').checked=false;
+  }
+});
 let debutPrec='';
 document.getElementById('f-debut').addEventListener('change',function(){
   const fin=document.getElementById('f-fin');
