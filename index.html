@@ -634,6 +634,7 @@ function renderMois(){
       const jCouleur=cellClair?eclaircir(jc.bg,.75):jc.bg;
       const jbg=(jEnAttente&&!cellClair)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jCouleur:jCouleur;
       celStyle=' style="background:'+jbg+';"';
+      if(/vacances/i.test(journeeEvs[0].client||'')){cellClair=false;celStyle=' style="background:linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),url(vacances.jpg) center/cover;"';}
     } else {
       // Inter(s) "demi-journée" → chaque moitié (matin / aprem, selon l'heure de début) prend la couleur de son donneur
       const demiEvs=interventions.filter(e=>e.date===ds&&e.demiJournee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
