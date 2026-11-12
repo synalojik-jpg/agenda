@@ -341,6 +341,7 @@ const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
 let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
+let tombstones=JSON.parse(localStorage.getItem('synalojik_tomb')||'[]');
 let donneurFocus=null; // donneur mis en surbrillance (nom en majuscules), null = aucun
 let clipboardEv=null; // intervention copiée en attente de collage
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -405,21 +406,17 @@ async function chargerDrive(){
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
     const driveData=JSON.parse(r.body||'[]');
-    // IDs supprimés sur d'autres appareils — ne pas les réinjecter
-    const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
-    // Entrées locales ajoutées hors ligne (absentes du Drive et non supprimées)
-    const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
-    const driveIds=new Set(driveData.map(i=>i.id));
-    const deletedIds=new Set(deleted);
-    const localOnly=localData.filter(i=>!driveIds.has(i.id)&&!deletedIds.has(i.id));
-    interventions=[...driveData,...localOnly];
-    // Nettoyer les tombstones déjà absents du Drive (inutiles désormais)
-    localStorage.setItem('synalojik_deleted','[]');
-    if(localOnly.length>0)await sauvegarder();
-    localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
+if(localStorage.getItem('synalojik_dirty')){
+  interventions=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
+  await sauvegarder();
+}else{
+  interventions=driveData;
+  localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
+}
   }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
 }
 async function sauvegarder(){
+  localStorage.setItem('synalojik_dirty','1');
   localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   if(!accessToken){afficherStatutSauvegarde('local');return;}
   try{
@@ -428,7 +425,7 @@ async function sauvegarder(){
     form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));
     form.append('file',new Blob([JSON.stringify(interventions)],{type:'application/json'}));
     const res=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+FILE_ID+'?uploadType=multipart',{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken},body:form});
-    if(res.ok){afficherStatutSauvegarde('ok');}
+    if(res.ok)localStorage.removeItem('synalojik_dirty');{afficherStatutSauvegarde('ok');}
     else{afficherStatutSauvegarde('erreur');console.error('Drive error',res.status);}
   }catch(e){afficherStatutSauvegarde('erreur');console.error(e);}
 }
