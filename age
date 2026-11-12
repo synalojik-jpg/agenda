@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Synalojik – Agenda</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f2490">
@@ -313,7 +313,6 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
         <button class="btn-supprimer" onclick="supprimerIntervention()">🗑 Supprimer</button>
       </div>
       <button class="btn-copier" id="btn-copier" onclick="copierIntervention()" style="display:none;">📋 Copier cette intervention</button>
-      <button class="btn-retour" onclick="retourBas()" style="width:100%;margin-top:8px;padding:11px;font-size:.88rem;">← Retour</button>
     </div>
   </div>
 </div>
@@ -324,12 +323,8 @@ header{background:linear-gradient(135deg,var(--noir),var(--bleu-fonce));padding:
     <div class="modal-header"><h2>Réserver le créneau</h2><button class="modal-close" onclick="fermerResa()">✕</button></div>
     <div class="modal-body">
       <button id="resa-mic" onclick="dicter()">🎤 Dicter</button>
-      <div style="display:flex;gap:8px;margin:0 0 10px">
-        <button onclick="annulerDicte()" style="flex:1;padding:12px;font-size:1rem">⌫ Annuler le dernier</button>
-        <button onclick="toutEffacerResa()" style="flex:1;padding:12px;font-size:1rem">🗑 Tout effacer</button>
-      </div>
-      <div class="form-field"><label>Ex : 10/10 de 9h à 10h Dupont Adista</label>
-        <input type="text" id="resa-txt" placeholder="Date, heure, client, donneur d'ordre" autocomplete="off"></div>
+      <div class="form-field"><label>Ex : 10/10 de 9h à 10h Client</label>
+        <input type="text" id="resa-txt" placeholder="Date, heures, client, lieu" autocomplete="off"></div>
       <div id="resa-recap" style="font-size:.95rem;font-weight:600;min-height:44px;margin:8px 0;"></div>
       <button class="btn-ajouter" style="width:100%;font-size:1.2rem;padding:18px" onclick="validerResa()">OK, réserver</button>
     </div>
@@ -341,7 +336,6 @@ const API_KEY='AIzaSyBcCfAhpT7_eGXkc07fdBEViaHJHhmNCNA';
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 let FILE_ID=null,tokenClient,accessToken=null;
 let interventions=[],currentDate=new Date(),vue='mois',editIdx=null,jourEnCours=null;
-let tombstones=JSON.parse(localStorage.getItem('synalojik_tomb')||'[]');
 let donneurFocus=null; // donneur mis en surbrillance (nom en majuscules), null = aucun
 let clipboardEv=null; // intervention copiée en attente de collage
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -406,17 +400,21 @@ async function chargerDrive(){
     await obtenirFileId();
     const r=await gapi.client.drive.files.get({fileId:FILE_ID,alt:'media'});
     const driveData=JSON.parse(r.body||'[]');
-if(localStorage.getItem('synalojik_dirty')){
-  interventions=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
-  await sauvegarder();
-}else{
-  interventions=driveData;
-  localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
-}
+    // IDs supprimés sur d'autres appareils — ne pas les réinjecter
+    const deleted=JSON.parse(localStorage.getItem('synalojik_deleted')||'[]');
+    // Entrées locales ajoutées hors ligne (absentes du Drive et non supprimées)
+    const localData=JSON.parse(localStorage.getItem('synalojik_v2')||'[]');
+    const driveIds=new Set(driveData.map(i=>i.id));
+    const deletedIds=new Set(deleted);
+    const localOnly=localData.filter(i=>!driveIds.has(i.id)&&!deletedIds.has(i.id));
+    interventions=[...driveData,...localOnly];
+    // Nettoyer les tombstones déjà absents du Drive (inutiles désormais)
+    localStorage.setItem('synalojik_deleted','[]');
+    if(localOnly.length>0)await sauvegarder();
+    localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   }catch(e){const l=localStorage.getItem('synalojik_v2');interventions=l?JSON.parse(l):[];}
 }
 async function sauvegarder(){
-  localStorage.setItem('synalojik_dirty','1');
   localStorage.setItem('synalojik_v2',JSON.stringify(interventions));
   if(!accessToken){afficherStatutSauvegarde('local');return;}
   try{
@@ -425,7 +423,7 @@ async function sauvegarder(){
     form.append('metadata',new Blob([JSON.stringify({name:'journal.json',mimeType:'application/json'})],{type:'application/json'}));
     form.append('file',new Blob([JSON.stringify(interventions)],{type:'application/json'}));
     const res=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+FILE_ID+'?uploadType=multipart',{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken},body:form});
-    if(res.ok)localStorage.removeItem('synalojik_dirty');{afficherStatutSauvegarde('ok');}
+    if(res.ok){afficherStatutSauvegarde('ok');}
     else{afficherStatutSauvegarde('erreur');console.error('Drive error',res.status);}
   }catch(e){afficherStatutSauvegarde('erreur');console.error(e);}
 }
@@ -474,9 +472,9 @@ document.addEventListener('touchend',e=>{
 
 // Liste fixe des donneurs d'ordre connus (proposés dans la liste déroulante,
 // et utilisés pour garantir des couleurs distinctes). Tu peux en ajouter/retirer ici.
-const DONNEURS_CONNUS = ['5COM','5COM-WIFIRST','ADISTA','ANTIBUG','APPUITECH','BA2I','CONNEXX','DELTINFO',
-  'GC SERVICES','IAGONA','ISLO SERVICES','LEMON GROUP','MA BUREAUTIQUE','MMF SERVICES',
-  'MY CONNECT','NEXT BUSINESS DAY','NOVA INTEGRATION','CAP-INDUS','SMART MCL'];
+const DONNEURS_CONNUS = ['5COM','ADISTA','ANTIBUG','APPUITECH','ATI PC','BA2I','CONNEXX','DELTINFO',
+  'GC DEVELOPPEMENT','IAGONA','ISLO SERVICES','ITEC','LEMON GROUP','MA BUREAUTIQUE','MMF SERVICES',
+  'MY CONNECT','NEXT BUSINESS DAY','NOVA INTEGRATION','PRESTINFO MAINTENANCE','SMART MCL','VISIOSCREEN'];
 
 // Construit la liste des donneurs à proposer dans le champ (liste fixe + ceux déjà tapés dans l'historique)
 function listeDonneursDatalist(){
@@ -631,7 +629,6 @@ function renderMois(){
       const jCouleur=cellClair?eclaircir(jc.bg,.75):jc.bg;
       const jbg=(jEnAttente&&!cellClair)?'repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 4px,transparent 4px 8px),'+jCouleur:jCouleur;
       celStyle=' style="background:'+jbg+';"';
-      if(/vacances/i.test(journeeEvs[0].client||'')){cellClair=false;celStyle=' style="background:linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),url(vacances.jpg) center/cover;"';}
     } else {
       // Inter(s) "demi-journée" → chaque moitié (matin / aprem, selon l'heure de début) prend la couleur de son donneur
       const demiEvs=interventions.filter(e=>e.date===ds&&e.demiJournee).sort((a,b)=>(a.debut||'').localeCompare(b.debut||''));
@@ -902,9 +899,8 @@ function ouvrirFormulaire(idx,ds,heure,avecRetour){
     document.getElementById('f-demi-journee').checked=!!i.demiJournee;
   } else {
     if(ds)document.getElementById('f-date').value=ds;
-    if(heure){document.getElementById('f-debut').value=heure;document.getElementById('f-fin').value=plusUneHeure(heure);}
+    if(heure)document.getElementById('f-debut').value=heure;
   }
-  debutPrec=document.getElementById('f-debut').value;
   fermerListe();
   document.getElementById('overlayForm').classList.add('visible');
 }
@@ -914,11 +910,6 @@ function ouvrirEv(id){
   ouvrirFormulaire(idx,null,null,jourEnCours!==null);
 }
 function retourListe(){fermerForm();if(jourEnCours)ouvrirListe(jourEnCours);}
-function retourBas(){
-  // même comportement que le Retour du haut : liste du jour si on en vient, sinon on ferme
-  if(document.getElementById('btn-retour').style.display==='block')retourListe();
-  else fermerForm();
-}  
 function fermerForm(){document.getElementById('overlayForm').classList.remove('visible');editIdx=null;}
 document.getElementById('overlayForm').addEventListener('click',function(e){if(e.target===this)fermerForm();});
 function majLienDescriptif(){
@@ -934,18 +925,6 @@ function majLienDescriptif(){
   }
 }
 document.getElementById('f-descriptif').addEventListener('input',majLienDescriptif);
-  document.getElementById('f-client').addEventListener('input',function(){
-  if(/vacances|absent/i.test(this.value)){
-    document.getElementById('f-journee').checked=true;
-    document.getElementById('f-demi-journee').checked=false;
-  }
-});
-let debutPrec='';
-document.getElementById('f-debut').addEventListener('change',function(){
-  const fin=document.getElementById('f-fin');
-  if(this.value&&(!fin.value||fin.value<=this.value||fin.value===plusUneHeure(debutPrec)))fin.value=plusUneHeure(this.value);
-  debutPrec=this.value;
-});
 function viderForm(){['f-date','f-debut','f-fin','f-client','f-adresse','f-descriptif','f-donneur','f-numero','f-tarif','f-date-fin'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-valide').checked=false;document.getElementById('f-colis').checked=false;document.getElementById('f-journee').checked=false;document.getElementById('f-demi-journee').checked=false;majLienDescriptif();}
 function getFormData(id){
   return{id:id||Date.now().toString(),date:document.getElementById('f-date').value,debut:document.getElementById('f-debut').value,fin:document.getElementById('f-fin').value,client:document.getElementById('f-client').value,adresse:document.getElementById('f-adresse').value,descriptif:document.getElementById('f-descriptif').value,donneur:document.getElementById('f-donneur').value,numero:document.getElementById('f-numero').value,tarif:document.getElementById('f-tarif').value,valide:!document.getElementById('f-valide').checked,colis:document.getElementById('f-colis').checked,journee:document.getElementById('f-journee').checked,demiJournee:document.getElementById('f-demi-journee').checked};
@@ -1057,12 +1036,6 @@ function exportCSVMois(){
 render();
   // ---- RÉSERVER LE CRÉNEAU (téléphone) ----
 function normResa(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/groupe/g,'group');}
-function plusUneHeure(h){
-  if(!h)return '';
-  const [hh,mm]=h.split(':').map(Number);
-  if(hh>=23)return '23:59';
-  return String(hh+1).padStart(2,'0')+':'+String(mm||0).padStart(2,'0');
-}
 function parseResa(txt){
   let t=' '+normResa(txt)+' ';
   const out={debut:null,fin:null,dates:[],donneur:'',reste:''};
@@ -1078,7 +1051,7 @@ function parseResa(txt){
     const trouve=trouverDonneur(t); if(trouve){out.donneur=trouve.nom;t=trouve.t;}
   const hs=[];
   t=t.replace(/(\d{1,2})\s*(?:h|heures?|:)\s*(\d{2})?(?![a-z0-9])/g,(m,h,mn)=>{hs.push(h.padStart(2,'0')+':'+(mn||'00'));return ' ';});
-  out.debut=hs[0]||null; out.fin=hs[1]||(hs[0]?plusUneHeure(hs[0]):null);
+  out.debut=hs[0]||null; out.fin=hs[1]||null;
   t=t.replace(/apres.?demain/g,()=>{add(plus(2));return ' ';});
   t=t.replace(/demain/g,()=>{add(plus(1));return ' ';});
   t=t.replace(/aujourd.?hui/g,()=>{add(plus(0));return ' ';});
@@ -1107,6 +1080,7 @@ function parseResa(txt){
   'BA2I':['ba 2 i','b a 2 i','bai'],
   'CONNEXX':['connexe','connect x'],
   'DELTINFO':['delta info'],
+  'PRESTINFO MAINTENANCE':['prestinfo','presto info'],
   'ITEC':['i tech','itech'],
   'APPUITECH':['appui tech','appuie tech'],
   'VISIOSCREEN':['visio screen'],
@@ -1133,10 +1107,9 @@ function recapResa(r){
   const f=s=>s.split('-').reverse().join('/');
   const d=r.dates.length>1?f(r.dates[0])+' → '+f(r.dates[r.dates.length-1]):f(r.dates[0]);
   const h=r.debut?(' · '+r.debut+(r.fin?'–'+r.fin:'')):' · journée';
-  return d+h+(r.reste?' · '+r.reste:'')+(r.donneur?' · '+r.donneur:'');
+  return d+h+(r.donneur?' · '+r.donneur:'')+(r.reste?' · '+r.reste:'');
 }
 function ouvrirResa(){
-  pile=[]; baseTxt='';
   document.getElementById('resa-txt').value='';
   document.getElementById('resa-recap').textContent='';
   document.getElementById('resa-mic').style.display=(window.SpeechRecognition||window.webkitSpeechRecognition)?'block':'none';
@@ -1147,7 +1120,7 @@ document.getElementById('overlayResa').addEventListener('click',function(e){if(e
 document.getElementById('resa-txt').addEventListener('input',function(){
   document.getElementById('resa-recap').textContent=recapResa(parseResa(this.value));
 });
-let reco=null, ecoute=false, baseTxt='', pile=[];
+let reco=null, ecoute=false, baseTxt='';
 function dicter(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR)return;
@@ -1160,32 +1133,13 @@ function dicter(){
     reco.onresult=e=>{
       let txt=''; for(const r of e.results) txt+=r[0].transcript+' ';
       inp.value=baseTxt+txt.trim(); inp.dispatchEvent(new Event('input'));
+      if(e.results[e.results.length-1].isFinal) baseTxt=inp.value+' ';
     };
-    reco.onend=()=>{
-      if(inp.value.trim()!==baseTxt.trim()){ pile.push(baseTxt); baseTxt=inp.value+' '; }
-      if(ecoute) setTimeout(lancer,150); else btn.textContent='🎤 Dicter';
-    };
+    reco.onend=()=>{ if(ecoute) setTimeout(lancer,150); else btn.textContent='🎤 Dicter'; };
     reco.onerror=ev=>{ if(ev.error==='no-speech'||ev.error==='aborted')return; ecoute=false; btn.textContent='🎤 Dicter'; };
     reco.start();
   };
   lancer();
-}
-function stopDicte(){
-  ecoute=false;
-  if(reco){ reco.onend=null; try{reco.abort();}catch(e){} }
-  document.getElementById('resa-mic').textContent='🎤 Dicter';
-}
-function majResa(v){
-  const inp=document.getElementById('resa-txt');
-  inp.value=v; baseTxt=v?v+' ':'';
-  inp.dispatchEvent(new Event('input'));
-}
-function annulerDicte(){
-  stopDicte();
-  majResa(pile.length?pile.pop().trim():'');
-}
-function toutEffacerResa(){
-  stopDicte(); pile=[]; majResa('');
 }
 async function validerResa(){
   const r=parseResa(document.getElementById('resa-txt').value);
@@ -1196,7 +1150,7 @@ async function validerResa(){
   for(let d=new Date(d1);d<=d2;d.setDate(d.getDate()+1)){
     interventions.push({id:Date.now().toString()+Math.random().toString(36).slice(2,6),
       date:fmtISO(d),debut:r.debut||'09:00',fin:r.fin||(sansHeure?'18:00':''),
-      client:r.reste||'RÉSERVÉ',adresse:'',descriptif:'',donneur:r.donneur,numero:'',tarif:'',
+      client:r.reste||'RÉSERVÉ',adresse:'',descriptif:'À COMPLÉTER',donneur:r.donneur,numero:'',tarif:'',
       valide:false,colis:false,journee:sansHeure,demiJournee:false});
   }
   await sauvegarder();render();fermerResa();
